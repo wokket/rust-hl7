@@ -14,3 +14,6 @@ Basic usage:
 This first cut is intended to parse from a multiline text blob into a tree of strings, representing all the different components.
 
 Interpreting this components (type conversion, determing which fields they represent etc) is a future problem.
+
+
+Early (apples to oranges) benchmarks this library at 12us to parse the same message nHAPI takes 350us (it creates a fully populated, strongly typed object, we just have Vec's of &str's everywhere....)

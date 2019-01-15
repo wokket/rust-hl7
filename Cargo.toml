@@ -1,0 +1,10 @@
+[package]
+name = "rust-hl7"
+version = "0.1.0"
+authors = ["wokket <wokket@gmail.com>"]
+edition = "2018"
+description = "HL7 Parser and object builder? query'er? - experimental only at any rate"
+#licence = "MIT"
+
+[dependencies]
+stopwatch = "0.0.7"

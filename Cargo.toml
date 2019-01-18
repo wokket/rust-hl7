@@ -8,3 +8,4 @@ description = "HL7 Parser and object builder? query'er? - experimental only at a
 
 [dependencies]
 stopwatch = "0.0.7"
+itertools = "0.8.0"

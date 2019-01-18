@@ -13,7 +13,7 @@ namespace ConsoleApp1
             var hl7Message = _parser.Parse(ORU_TEXT)as NHapi.Model.V24.Message.ORU_R01;
             var field = hl7Message.PATIENT_RESULTs.First().ORDER_OBSERVATIONs.First().OBR.GetOrderingProvider(0);
 
-            //var summary = BenchmarkRunner.Run<nhapi>();
+            var summary = BenchmarkRunner.Run<nhapi>();
         }
 
 

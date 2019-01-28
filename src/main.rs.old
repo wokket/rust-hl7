@@ -1,8 +1,10 @@
-#![feature(test)]
+// #![feature(test)]
+extern crate rusthl7;
 extern crate stopwatch;
+
 use stopwatch::Stopwatch;
 
-mod pipe_parser;
+use rusthl7::*;
 
 // This is a dev-only executable for testing functionality, not for general distribution.
 fn main() {
@@ -20,12 +22,12 @@ fn main() {
     //     (1000000 / (duration / 1000))
     // );
 
-    let mut msg = pipe_parser::message_parser::MessageParser::parse_message(get_simple_message());
+    let mut msg = message_parser::MessageParser::parse_message(get_simple_message());
     let msa = msg.get_segments("MSA");
 
     println!("{:?}", msa);
 
-    msg = pipe_parser::message_parser::MessageParser::parse_message(get_sample_message());
+    msg = message_parser::MessageParser::parse_message(get_sample_message());
     let obr = msg.get_segments("OBR");
 
     println!("{:?}", obr[0].fields[16].get_all_as_string());

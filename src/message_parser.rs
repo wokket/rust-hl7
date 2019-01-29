@@ -20,29 +20,13 @@ impl MessageParser {
     }
 
     /// Parses an entire HL7 message into it's component values
-    pub fn parse_message<'a>(input: String) -> Message<'a> {
+    pub fn parse_message(input: String) -> Message {
         let mut result = Message::new(input);
 
         result.build_from_input();
 
         result
     }
-
-    // pub fn parse_message_alt<'a>(input: &'a str) -> Message<'a> {
-    //     let mut segments = Vec::with_capacity(5);
-
-    //     for segment_value in input.split('\r') {
-    //         if segment_value.len() == 0 {
-    //             //we've hit the end-of-message blank line delimnter, proceed no further
-    //             break;
-    //         }
-
-    //         let segment = SegmentParser::parse_segment_alt(segment_value);
-    //         segments.push(segment);
-    //     }
-
-    //     Message { segments: segments }
-    // }
 }
 
 #[cfg(test)]
@@ -51,19 +35,20 @@ mod tests {
 
     #[test]
     fn test_basic_message() {
-        let result = MessageParser::parse_message("test|fields\ranother|segment");
+        let result = MessageParser::parse_message("test|fields\ranother|segment".to_string());
         let expected = Message {
+            input: "test|fields\ranother|segment".to_string(),
             segments: vec![
                 Segment {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["test"],
+                                sub_components: vec!["test".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["fields"],
+                                sub_components: vec!["fields".to_string()],
                             }],
                         },
                     ],
@@ -72,12 +57,12 @@ mod tests {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["another"],
+                                sub_components: vec!["another".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["segment"],
+                                sub_components: vec!["segment".to_string()],
                             }],
                         },
                     ],
@@ -90,19 +75,20 @@ mod tests {
 
     #[test]
     fn test_message_with_final_delimiter() {
-        let result = MessageParser::parse_message("test|fields\ranother|segment\r"); //note the trailing \r
+        let result = MessageParser::parse_message("test|fields\ranother|segment\r".to_string()); //note the trailing \r
         let expected = Message {
+            input: "test|fields\ranother|segment\r".to_string(),
             segments: vec![
                 Segment {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["test"],
+                                sub_components: vec!["test".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["fields"],
+                                sub_components: vec!["fields".to_string()],
                             }],
                         },
                     ],
@@ -111,12 +97,12 @@ mod tests {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["another"],
+                                sub_components: vec!["another".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["segment"],
+                                sub_components: vec!["segment".to_string()],
                             }],
                         },
                     ],
@@ -129,19 +115,20 @@ mod tests {
 
     #[test]
     fn test_message_with_message_delimiter_included() {
-        let result = MessageParser::parse_message("test|fields\ranother|segment\r\r"); //note the trailing \r\r
+        let result = MessageParser::parse_message("test|fields\ranother|segment\r\r".to_string()); //note the trailing \r\r
         let expected = Message {
+            input: "test|fields\ranother|segment\r\r".to_string(),
             segments: vec![
                 Segment {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["test"],
+                                sub_components: vec!["test".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["fields"],
+                                sub_components: vec!["fields".to_string()],
                             }],
                         },
                     ],
@@ -150,12 +137,12 @@ mod tests {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["another"],
+                                sub_components: vec!["another".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["segment"],
+                                sub_components: vec!["segment".to_string()],
                             }],
                         },
                     ],
@@ -181,16 +168,8 @@ mod tests {
         });
     }
 
-    #[bench]
-    fn bench_full_message_alternate(b: &mut test::Bencher) {
-        //comparitor for a/b testing
-        b.iter(
-            || MessageParser::parse_message_alt(get_sample_message()), //note the trailing \r\r
-        );
-    }
-
-    fn get_sample_message() -> &'static str {
-        "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rPID|||555-44-4444||EVERYWOMAN^EVE^E^^^^L|JONES|19620320|F|||153 FERNWOOD DR.^^STATESVILLE^OH^35292||(206)3345232|(206)752-121||||AC555444444||67-A4335^OH^20030520\rOBR|1|845439^GHH OE|1045813^GHH LAB|15545^GLUCOSE|||200202150730|||||||||555-55-5555^PRIMARY^PATRICIA P^^^^MD^^|||||||||F||||||444-44-4444^HIPPOCRATES^HOWARD H^^^^MD\rOBX|1|SN|1554-5^GLUCOSE^POST 12H CFST:MCNC:PT:SER/PLAS:QN||^182|mg/dl|70_105|H|||F"
+    fn get_sample_message() -> String {
+        "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rPID|||555-44-4444||EVERYWOMAN^EVE^E^^^^L|JONES|19620320|F|||153 FERNWOOD DR.^^STATESVILLE^OH^35292||(206)3345232|(206)752-121||||AC555444444||67-A4335^OH^20030520\rOBR|1|845439^GHH OE|1045813^GHH LAB|15545^GLUCOSE|||200202150730|||||||||555-55-5555^PRIMARY^PATRICIA P^^^^MD^^|||||||||F||||||444-44-4444^HIPPOCRATES^HOWARD H^^^^MD\rOBX|1|SN|1554-5^GLUCOSE^POST 12H CFST:MCNC:PT:SER/PLAS:QN||^182|mg/dl|70_105|H|||F".to_string()
     }
 
 }

@@ -10,21 +10,11 @@ impl SegmentParser {
         input.split("|").collect()
     }
 
-    pub fn parse_segment<'a>(input: &'a str) -> Segment<'a> {
+    pub fn parse_segment(input: &str) -> Segment {
         let fields = input
             .split("|") //split by delimiter
             .map(|field_value| FieldParser::parse_field(field_value)) //call the parser for each value
             .collect(); //turn it into a vec
-
-        Segment { fields: fields } //return the new segment
-    }
-
-    pub fn parse_segment_alt<'a>(input: &'a str) -> Segment<'a> {
-        let mut fields = Vec::with_capacity(10);
-
-        for field_value in input.split('|') {
-            fields.push(FieldParser::parse_field_alt(field_value));
-        }
 
         Segment { fields: fields } //return the new segment
     }
@@ -68,12 +58,12 @@ mod tests {
             fields: vec![
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["Test"],
+                        sub_components: vec!["Test".to_string()],
                     }],
                 },
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["Value"],
+                        sub_components: vec!["Value".to_string()],
                     }],
                 },
             ],
@@ -90,30 +80,34 @@ mod tests {
             fields: vec![
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["OBR"],
+                        sub_components: vec!["OBR".to_string()],
                     }],
                 },
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["1"],
+                        sub_components: vec!["1".to_string()],
                     }],
                 },
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["20061019172719"],
-                    }],
-                },
-                Field { repeats: vec![] },
-                Field {
-                    repeats: vec![Repeat {
-                        sub_components: vec!["76770", "Ultrasound: retroperitoneal", "C4"],
+                        sub_components: vec!["20061019172719".to_string()],
                     }],
                 },
                 Field { repeats: vec![] },
+                Field {
+                    repeats: vec![Repeat {
+                        sub_components: vec![
+                            "76770".to_string(),
+                            "Ultrasound: retroperitoneal".to_string(),
+                            "C4".to_string(),
+                        ],
+                    }],
+                },
+                Field { repeats: vec![] },
                 Field { repeats: vec![] },
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["12349876"],
+                        sub_components: vec!["12349876".to_string()],
                     }],
                 },
             ],

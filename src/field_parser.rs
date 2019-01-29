@@ -7,12 +7,15 @@ use super::*;
 impl FieldParser {
     /// This method is expecting to receive a single Repeat worth of data only...
     /// If called with an empty repeat (ie "") an empty vec (ie []) is returned
-    fn get_components_naiive(input: &str) -> Vec<&str> {
+    fn get_components_naiive(input: &str) -> Vec<String> {
         if input.len() == 0 {
-            return Vec::<&str>::new(); //empty, no-alloc
+            return Vec::<String>::new(); //empty, no-alloc
         }
 
-        let result = input.split("^").collect();
+        let result = input
+            .split("^")
+            .map(|e| e.to_string()) // copy slice to a brand new string, we need a seperate obj in order to return it.
+            .collect();
         result
     }
 
@@ -27,7 +30,7 @@ impl FieldParser {
         result
     }
 
-    pub fn parse_field<'a>(input: &'a str) -> Field<'a> {
+    pub fn parse_field(input: &str) -> Field {
         let mut repeats = Vec::new(); //TODO: Add reasonable minimum capacity
 
         for repeat_value in FieldParser::get_repeats(input) {
@@ -42,7 +45,7 @@ impl FieldParser {
         Field { repeats: repeats }
     }
 
-    pub fn parse_field_alt<'a>(input: &'a str) -> Field<'a> {
+    pub fn parse_field_alt(input: &str) -> Field {
         let mut repeats = Vec::new(); //benchs faster assuming no value
 
         for repeat_value in FieldParser::get_repeats(input) {
@@ -112,7 +115,7 @@ mod tests {
         let input = "Test Value";
         let expected = Field {
             repeats: vec![Repeat {
-                sub_components: vec!["Test Value"],
+                sub_components: vec!["Test Value".to_string()],
             }],
         };
 
@@ -126,10 +129,10 @@ mod tests {
         let expected = Field {
             repeats: vec![
                 Repeat {
-                    sub_components: vec!["Test Value"],
+                    sub_components: vec!["Test Value".to_string()],
                 },
                 Repeat {
-                    sub_components: vec!["another Value"],
+                    sub_components: vec!["another Value".to_string()],
                 },
             ],
         };
@@ -145,24 +148,24 @@ mod tests {
             repeats: vec![
                 Repeat {
                     sub_components: vec![
-                        "260 GOODWIN CREST DRIVE",
-                        "",
-                        "BIRMINGHAM",
-                        "AL",
-                        "35 209",
-                        "",
-                        "M",
+                        "260 GOODWIN CREST DRIVE".to_string(),
+                        "".to_string(),
+                        "BIRMINGHAM".to_string(),
+                        "AL".to_string(),
+                        "35 209".to_string(),
+                        "".to_string(),
+                        "M".to_string(),
                     ],
                 },
                 Repeat {
                     sub_components: vec![
-                        "NICKELL’S PICKLES",
-                        "10000 W 100TH AVE",
-                        "BIRMINGHAM",
-                        "AL",
-                        "35200",
-                        "",
-                        "O",
+                        "NICKELL’S PICKLES".to_string(),
+                        "10000 W 100TH AVE".to_string(),
+                        "BIRMINGHAM".to_string(),
+                        "AL".to_string(),
+                        "35200".to_string(),
+                        "".to_string(),
+                        "O".to_string(),
                     ],
                 },
             ],

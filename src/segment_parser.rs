@@ -2,8 +2,6 @@
 pub struct SegmentParser;
 
 use super::field_parser::FieldParser;
-use super::test::Bencher;
-use super::{Field, Repeat, Segment};
 
 impl SegmentParser {
     fn _get_fields(input: &str) -> Vec<&str> {
@@ -12,6 +10,7 @@ impl SegmentParser {
 
     pub fn parse_segment(input: &str) -> Segment {
         let fields = input
+            .trim() //remove leading and trailing berko chars (bigger issue when debugging)
             .split("|") //split by delimiter
             .map(|field_value| FieldParser::parse_field(field_value)) //call the parser for each value
             .collect(); //turn it into a vec
@@ -21,6 +20,8 @@ impl SegmentParser {
 }
 
 #[cfg(test)]
+use super::test::Bencher;
+use super::{Field, Repeat, Segment};
 mod tests {
     use super::*;
 

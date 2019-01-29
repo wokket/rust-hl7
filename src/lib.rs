@@ -97,126 +97,87 @@ impl Message {
     pub fn get_segments(&self, segment_type: &str) -> Vec<&Segment> {
         self.segments
             .iter()
-            .filter(|segment| segment.fields[0].get_all_as_string() == segment_type)
+            .filter(|segment| {
+                let seg_type = segment.fields[0].get_all_as_string();
+                //println!("Checking Segment: '{}'", seg_type);
+                seg_type == segment_type
+            })
             .collect()
     }
 }
 
-#[repr(C)]
-#[derive(Debug)]
-pub struct TestStruct {
-    pub count: i32,
+#[no_mangle]
+pub extern "C" fn free_string(s: *mut c_char) {
+    unsafe {
+        if s.is_null() {
+            return;
+        }
+        CString::from_raw(s)
+    };
 }
 
-impl TestStruct {
-    #[no_mangle]
-    pub extern "C" fn free_string(s: *mut c_char) {
-        unsafe {
-            if s.is_null() {
-                return;
-            }
-            CString::from_raw(s)
-        };
-    }
+#[no_mangle]
+pub extern "C" fn free_message(msg_ptr: *mut Message) {
+    unsafe {
+        if msg_ptr.is_null() {
+            return;
+        }
 
-    #[no_mangle]
-    pub extern "C" fn free_message(msg_ptr: *mut Message) {
-        unsafe {
-            if msg_ptr.is_null() {
-                return;
-            }
-
-            let obj = Box::from_raw(msg_ptr);
-            println!("Freeing message: {:?}", obj);
-        };
-    }
-
-    #[no_mangle]
-    pub extern "C" fn build_message(s: *const c_char) -> *mut Message {
-        println!("Into build_message...");
-
-        let c_str = unsafe {
-            assert!(!s.is_null());
-            CStr::from_ptr(s)
-        };
-
-        let r_str = c_str.to_str().unwrap().to_string();
-
-        println!("Building message from string value: {}", r_str);
-
-        let m = message_parser::MessageParser::parse_message(r_str);
-
-        println!("Message init to: {:?}", m);
-
-        let return_ptr = Box::into_raw(Box::new(m)); //box onto the heap for stability, then get a raw ptr we can pass outside.
-
-        return_ptr
-    }
-
-    #[no_mangle]
-    pub extern "C" fn get_field(ptr: *const Message) -> *mut c_char {
-        println!("Into get_field()");
-        let obj = unsafe { &*ptr }; // unsafe { Box::from_raw(ptr) };
-        println!("unboxed obj");
-        println!("Obj = {:?}", obj);
-
-        let result = obj.segments[0].fields[0].get_all_as_string();
-
-        println!("Returning field value: {}", result);
-
-        let c_string = CString::new(result).unwrap();
-        c_string.into_raw()
-    }
+        let obj = Box::from_raw(msg_ptr);
+        //println!("Freeing message: {:?}", obj);
+    };
 }
 
-impl TestStruct {
-    #[no_mangle]
-    pub extern "C" fn new_test_struct_ref() -> *mut TestStruct {
-        let s = TestStruct { count: 5 };
-        let b = Box::new(s);
-        Box::into_raw(b)
-    }
+#[no_mangle]
+pub extern "C" fn build_message(s: *const c_char) -> *mut Message {
+    // println!("Into build_message...");
 
-    #[no_mangle]
-    pub extern "C" fn free_struct(ptr: *mut TestStruct) {
-        println!("Into free...");
-        unsafe {
-            let b = Box::from_raw(ptr); //this return value falling out of scope free's the memory
-            println!("Freeing struct with counter: {}", b.count);
-        }
-    }
+    let c_str = unsafe {
+        assert!(!s.is_null());
+        CStr::from_ptr(s)
+    };
 
-    #[no_mangle]
-    pub extern "C" fn new_test_struct() -> TestStruct {
-        TestStruct { count: 5 }
-    }
+    let r_str = c_str.to_str().unwrap().to_string();
 
-    #[no_mangle]
-    pub extern "C" fn add_to_struct(ptr: *mut TestStruct, x: i32) -> i32 {
-        println!("into Add");
+    //println!("Building message from string value: {}", r_str);
 
-        let mut obj = unsafe { Box::from_raw(ptr) };
+    let m = message_parser::MessageParser::parse_message(r_str);
 
-        println!("Calling add on {:?}", obj);
+    //println!("Message init to: {:?}", m);
 
-        obj.count += x;
-        let result = obj.count;
+    let return_ptr = Box::into_raw(Box::new(m)); //box onto the heap for stability, then get a raw ptr we can pass outside.
 
-        //we need to tell rust not to drop the struct again
-        let temp = Box::into_raw(obj);
-        if temp != ptr {
-            println!("New ptr != passed pointer!  Future use of ptr is prob invalid!");
-        }
+    return_ptr
+}
 
-        result
-    }
+#[no_mangle]
+pub extern "C" fn get_field(
+    ptr: *const Message,
+    segment_ptr: *const c_char,
+    field_index: usize,
+) -> *mut c_char {
+    //println!("Into get_field()");
 
-    #[no_mangle]
-    pub extern "C" fn add_to_struct_val(mut self, x: i32) -> TestStruct {
-        println!("Calling add on {:?}", self);
-        self.count += x;
-        self
-    }
+    let obj: &Message = unsafe { &*ptr };
+
+    let segment_cstr = unsafe {
+        assert!(!segment_ptr.is_null());
+        CStr::from_ptr(segment_ptr)
+    };
+
+    let segment_str = segment_cstr.to_str().unwrap();
+
+    //println!("Getting field {} from '{}'", field_index, segment_str);
+
+    let matching_segments = obj.get_segments(segment_str);
+    // println!("Found {} matching segments", matching_segments.len());
+
+    let segment = matching_segments[0];
+    let result = segment.fields[field_index].get_all_as_string();
+    //println!("Returning field value: {}", result);
+
+    let c_string = CString::new(result).unwrap();
+    c_string.into_raw()
 }
 
 #[cfg(test)]

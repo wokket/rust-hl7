@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using BenchmarkDotNet.Attributes;
 using NHapi.Base.Parser;
+using NHapi.Base.Util;
 using NHapi.Model.V24.Message;
 
 namespace ConsoleApp1
@@ -8,7 +9,7 @@ namespace ConsoleApp1
     [CoreJob]
     [MemoryDiagnoser]
 
-    public class nhapi
+    public class NhapiVsRustHL7
     {
         public const string ACK_TEXT = "MSH|^~\\&|SENDING_APPLICATION|SENDING_FACILITY|RECEIVING_APPLICATION|RECEIVING_FACILITY|20110614075841||ACK|1407511|P|2.3||||||\r\n" +
                                             "MSA|AA|1407511|Success||";
@@ -30,13 +31,13 @@ namespace ConsoleApp1
         }
 
         [Benchmark]
-        public void Ack()
+        public void NHAPI_Ack()
         {
             var hl7Message = _parser.Parse(ACK_TEXT);
         }
 
         [Benchmark]
-        public void Oru_Parse()
+        public void NHAPI_Oru_Parse()
         {
             var hl7Message = _parser.Parse(ORU_TEXT);
         }
@@ -44,17 +45,39 @@ namespace ConsoleApp1
 
 
         [Benchmark]
-        public void Parse_and_retrieve_field()
+        public void NHAPI_Parse_and_retrieve_field()
         {
 
             var hl7Message = _parser.Parse(ORU_TEXT) as NHapi.Model.V24.Message.ORU_R01;
-            var field = hl7Message.PATIENT_RESULTs.First().ORDER_OBSERVATIONs.First().OBR.GetOrderingProvider(0);
+            var t = new Terser(hl7Message);
+            var fieldValueAsString = t.Get("/.OBR-7"); //get a rando field from the middle of the thing
+
         }
 
         [Benchmark]
-        public void Rretrieve_field()
+        public void Rust_Ack()
         {
-            var field = _oru.PATIENT_RESULTs.First().ORDER_OBSERVATIONs.First().OBR.GetOrderingProvider(0);
+            var hl7Message = Native.BuildMessage(ACK_TEXT);
+        }
+
+        [Benchmark]
+        public void Rust_Oru_Parse()
+        {
+            var hl7Message = Native.BuildMessage(ORU_TEXT);
+        }
+
+        [Benchmark]
+        public void Rust_Parse_and_retrieve_field()
+        {
+            using (var mh = Native.BuildMessage(ORU_TEXT))
+            { //pointer to Message, cleaned up via dispose
+
+                using (var fieldValue = Native.GetField(mh.DangerousGetHandle(), "OBR", 7))
+                {
+                    var fieldValueAsString = fieldValue.AsString();
+                } //dispose of string handle, freeing up string memeory on the rust side.
+            }
+
         }
     }
 }

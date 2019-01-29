@@ -3,7 +3,6 @@
 /// or to interpret the values (coercian to numeric values etc).
 pub struct MessageParser;
 
-use super::segment_parser::SegmentParser;
 use super::*;
 
 impl MessageParser {
@@ -30,7 +29,9 @@ impl MessageParser {
 }
 
 #[cfg(test)]
+
 mod tests {
+    use super::segment_parser::SegmentParser;
     use super::*;
 
     #[test]

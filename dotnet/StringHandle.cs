@@ -10,12 +10,17 @@ namespace ConsoleApp1
     /// </summary>
     public class StringHandle : SafeHandle
     {
+
+        [DllImport("rusthl7.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "free_string")]
+        private static extern void FreeString(IntPtr ptr);
+
+
         public StringHandle() : base(IntPtr.Zero, true) { }
         public override bool IsInvalid => false;
 
         protected override bool ReleaseHandle()
         {
-            Native.FreeString(handle);
+            FreeString(handle);
             return true;
         }
 

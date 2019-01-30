@@ -16,6 +16,5 @@ crate-type = ["dylib"]
 # path="src/main.rs"
 
 [dependencies]
-stopwatch = "0.0.7"
 itertools = "0.8.0"
 libc = "0.2.48"

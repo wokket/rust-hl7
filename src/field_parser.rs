@@ -31,22 +31,7 @@ impl FieldParser {
     }
 
     pub fn parse_field(input: &str) -> Field {
-        let mut repeats = Vec::new(); //TODO: Add reasonable minimum capacity
-
-        for repeat_value in FieldParser::get_repeats(input) {
-            let subcomponents = FieldParser::get_components_naiive(repeat_value);
-            let repeat = Repeat {
-                sub_components: subcomponents,
-            };
-
-            repeats.push(repeat);
-        }
-
-        Field { repeats: repeats }
-    }
-
-    pub fn parse_field_alt(input: &str) -> Field {
-        let mut repeats = Vec::new(); //benchs faster assuming no value
+        let mut repeats = Vec::new(); //TODO: Add reasonable minimum capacity if it benches faster
 
         for repeat_value in FieldParser::get_repeats(input) {
             let subcomponents = FieldParser::get_components_naiive(repeat_value);

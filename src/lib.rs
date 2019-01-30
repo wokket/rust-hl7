@@ -123,8 +123,7 @@ pub extern "C" fn free_message(msg_ptr: *mut Message) {
             return;
         }
 
-        let obj = Box::from_raw(msg_ptr);
-        //println!("Freeing message: {:?}", obj);
+        Box::from_raw(msg_ptr); //recreate boxed var, then drop it out of scope to clean
     };
 }
 

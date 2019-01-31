@@ -4,3 +4,4 @@ Cargo.lock
 dotnet/BenchmarkDotNet.Artifacts/
 dotnet/bin/
 dotnet/obj/
+BenchmarkDotNet.Artifacts/

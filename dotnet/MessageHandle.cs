@@ -7,7 +7,7 @@ namespace ConsoleApp1
     {
 
         /// <param name="ptr">A pointer returned from a call to BuildMessage</param>
-        [DllImport("rusthl7.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "free_message")]
+        [DllImport("rusthl7", CallingConvention = CallingConvention.Cdecl, EntryPoint = "free_message")]
         private static extern void FreeMessage(IntPtr ptr);
 
         public MessageHandle() : base(IntPtr.Zero, true) { }

@@ -11,10 +11,10 @@ namespace ConsoleApp1
         /// </summary>
         /// <param name="msg">A HL7 pipe-formatted string</param>
         /// <returns></returns>
-        [DllImport("rusthl7.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "build_message")]
+        [DllImport("rusthl7", CallingConvention = CallingConvention.Cdecl, EntryPoint = "build_message")]
         internal static extern MessageHandle BuildMessage(string msg);
 
-        [DllImport("rusthl7.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "get_field")]
+        [DllImport("rusthl7", CallingConvention = CallingConvention.Cdecl, EntryPoint = "get_field")]
         internal static extern StringHandle GetField(IntPtr ptrToMessage, string segmentName, int fieldIndex);
 
 

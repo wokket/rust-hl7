@@ -11,7 +11,7 @@ namespace ConsoleApp1
     public class StringHandle : SafeHandle
     {
 
-        [DllImport("rusthl7.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "free_string")]
+        [DllImport("rusthl7", CallingConvention = CallingConvention.Cdecl, EntryPoint = "free_string")]
         private static extern void FreeString(IntPtr ptr);
 
 

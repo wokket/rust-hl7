@@ -17,6 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="librusthl7.so">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="rusthl7.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

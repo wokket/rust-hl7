@@ -4,16 +4,12 @@ version = "0.1.0"
 authors = ["wokket <wokket@gmail.com>"]
 edition = "2018"
 description = "HL7 Parser and object builder? query'er? - experimental only at any rate"
-#licence = "MIT"
+license = "MIT OR Apache-2.0"
 
 [lib]
 name="rusthl7"
 path="src/lib.rs"
-crate-type = ["dylib"]
-
-# [[bin]]
-# name="testapp"
-# path="src/main.rs"
+crate-type = ["rlib", "dylib"]
 
 [dependencies]
 itertools = "0.8.0"

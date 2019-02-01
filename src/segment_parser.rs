@@ -2,6 +2,7 @@
 pub struct SegmentParser;
 
 use super::field_parser::FieldParser;
+use super::*;
 
 impl SegmentParser {
     fn _get_fields(input: &str) -> Vec<&str> {
@@ -20,9 +21,9 @@ impl SegmentParser {
 }
 
 #[cfg(test)]
-use super::test::Bencher;
-use super::{Field, Repeat, Segment};
+
 mod tests {
+    use super::test::Bencher;
     use super::*;
 
     #[test]

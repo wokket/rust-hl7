@@ -1,23 +1,11 @@
-/// This module parses a whole message.  It is expected that only a single message is passed at a time.
-/// Note that this parses to constituent values, but makes no effort to intepret those values (ie no strong-typing of segments etc)
-/// or to interpret the values (coercian to numeric values etc).
+//! This module parses a whole pipe-delimited style HL7 V2 message.  It is expected that only a single message is passed at a time.
+//! Note that this parses to constituent values, but makes no effort to intepret those values (ie no strong-typing of segments etc)
+//! or to interpret the values (coercian to numeric values etc).  Utility API's [are being added](Field::get_as_string) to better handle these fields
 pub struct MessageParser;
 
 use super::*;
 
 impl MessageParser {
-    /// Marker method to prove extern linking of libraries is working correctly.
-    #[no_mangle]
-    pub extern "C" fn ping() -> String {
-        "pong".to_string()
-    }
-
-    /// Marker method to prove extern linking of libraries is working correctly.
-    #[no_mangle]
-    pub extern "C" fn add(a: i32, b: i32) -> i32 {
-        a + b
-    }
-
     /// Parses an entire HL7 message into it's component values
     pub fn parse_message(input: String) -> Message {
         let mut result = Message::new(input);
@@ -31,7 +19,7 @@ impl MessageParser {
 #[cfg(test)]
 
 mod tests {
-    use super::segment_parser::SegmentParser;
+    //use super::segment_parser::SegmentParser;
     use super::*;
 
     #[test]

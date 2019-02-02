@@ -9,11 +9,11 @@ impl SegmentParser {
         input.split("|").collect()
     }
 
-    pub fn parse_segment(input: &str) -> Segment {
+    crate fn parse_segment(input: &str, delims: &Seperators) -> Segment {
         let fields = input
             .trim() //remove leading and trailing berko chars (bigger issue when debugging)
-            .split("|") //split by delimiter
-            .map(|field_value| FieldParser::parse_field(field_value)) //call the parser for each value
+            .split(delims.field) //split by delimiter
+            .map(|field_value| FieldParser::parse_field(field_value, delims)) //call the parser for each value
             .collect(); //turn it into a vec
 
         Segment { fields: fields } //return the new segment
@@ -71,7 +71,7 @@ mod tests {
             ],
         };
 
-        let actual = SegmentParser::parse_segment(input);
+        let actual = SegmentParser::parse_segment(input, &Seperators::default());
         assert_eq!(expected, actual);
     }
 
@@ -115,14 +115,14 @@ mod tests {
             ],
         };
 
-        let actual = SegmentParser::parse_segment(input);
+        let actual = SegmentParser::parse_segment(input, &Seperators::default());
         assert_eq!(expected, actual);
     }
 
     #[bench]
     fn bench_full_segment(b: &mut Bencher) {
         b.iter(
-            || SegmentParser::parse_segment(_get_sample_segment()), //note the trailing \r\r
+            || SegmentParser::parse_segment(_get_sample_segment(), &Seperators::default()), //note the trailing \r\r
         );
     }
 
@@ -130,7 +130,7 @@ mod tests {
     fn bench_full_segment_alternate(b: &mut Bencher) {
         //comparitor for a/b testing
         b.iter(
-            || SegmentParser::parse_segment(_get_sample_segment()), //note the trailing \r\r
+            || SegmentParser::parse_segment(_get_sample_segment(), &Seperators::default()), //note the trailing \r\r
         );
     }
 

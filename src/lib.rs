@@ -1,4 +1,5 @@
 #![feature(test)]
+#![feature(crate_visibility_modifier)]
 
 extern crate itertools;
 extern crate libc;
@@ -10,6 +11,51 @@ pub mod native;
 mod segment_parser;
 
 use itertools::Itertools;
+
+struct Seperators {
+    /// constant value, spec fixed to '\r' (ASCII 13, 0x0D)
+    segment: char,
+    field: char,
+    repeat: char,
+    component: char,
+    subcomponent: char,
+
+    escape_char: char,
+}
+
+impl Seperators {
+    /// Create a Seperator with th default (most common) HL7 values
+    fn default() -> Seperators {
+        Seperators {
+            segment: '\r',
+            field: '|',
+            repeat: '~',
+            component: '^',
+            subcomponent: '&',
+            escape_char: '\\',
+        }
+    }
+
+    // Create a Seperators with the values provided in the message.
+    // assumes the message starts with ```MSH|^~\&|``` or equiv for custom seperators
+    fn new(message: &str) -> Seperators {
+        //assuming we have a valid message
+        let mut chars = message.char_indices();
+
+        assert_eq!(Some((0, 'M')), chars.next());
+        assert_eq!(Some((1, 'S')), chars.next());
+        assert_eq!(Some((2, 'H')), chars.next());
+
+        Seperators {
+            segment: '\r',
+            field: chars.next().unwrap().1,
+            component: chars.next().unwrap().1,
+            repeat: chars.next().unwrap().1,
+            escape_char: chars.next().unwrap().1,
+            subcomponent: chars.next().unwrap().1,
+        }
+    }
+}
 
 /// A repeat of a field is a set of 0 or more sub component values.
 /// Currently all values are stored as their original string representations.  Methods to convert
@@ -84,7 +130,9 @@ impl Message {
     }
 
     pub fn build_from_input(&mut self) {
-        let iter = self.input.split('\r');
+        let delimiters = Seperators::new(&self.input);
+
+        let iter = self.input.split(delimiters.segment);
 
         for segment_value in iter {
             if segment_value.len() == 0 {
@@ -92,7 +140,7 @@ impl Message {
                 break;
             }
 
-            let segment = segment_parser::SegmentParser::parse_segment(segment_value);
+            let segment = segment_parser::SegmentParser::parse_segment(segment_value, &delimiters);
             self.segments.push(segment);
         }
     }
@@ -112,6 +160,19 @@ impl Message {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ensure_seperators_load_correctly() {
+        let expected = Seperators::default();
+        let actual = Seperators::new("MSH|^~\\&|CATH|StJohn|AcmeHIS|StJohn|20061019172719||ACK^O01|MSGID12349876|P|2.3\rMSA|AA|MSGID12349876");
+
+        assert_eq!(expected.component, actual.component);
+        assert_eq!(expected.escape_char, actual.escape_char);
+        assert_eq!(expected.field, actual.field);
+        assert_eq!(expected.repeat, actual.repeat);
+        assert_eq!(expected.segment, actual.segment);
+        assert_eq!(expected.subcomponent, actual.subcomponent);
+    }
 
     #[test]
     fn repeat_get_all_as_string_single_simple_value() {

@@ -24,16 +24,26 @@ mod tests {
 
     #[test]
     fn test_basic_message() {
-        let result = MessageParser::parse_message("test|fields\ranother|segment".to_string());
+        let result = MessageParser::parse_message("MSH|^~\\&|fields\ranother|segment".to_string());
         let expected = Message {
-            input: "test|fields\ranother|segment".to_string(),
+            input: "MSH|^~\\&|fields\ranother|segment".to_string(),
             segments: vec![
                 Segment {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["test".to_string()],
+                                sub_components: vec!["MSH".to_string()],
                             }],
+                        },
+                        Field {
+                            repeats: vec![
+                                Repeat {
+                                    sub_components: vec!["".to_string(), "".to_string()],
+                                },
+                                Repeat {
+                                    sub_components: vec!["\\&".to_string()],
+                                },
+                            ],
                         },
                         Field {
                             repeats: vec![Repeat {
@@ -64,16 +74,27 @@ mod tests {
 
     #[test]
     fn test_message_with_final_delimiter() {
-        let result = MessageParser::parse_message("test|fields\ranother|segment\r".to_string()); //note the trailing \r
+        let result =
+            MessageParser::parse_message("MSH|^~\\&|fields\ranother|segment\r".to_string()); //note the trailing \r
         let expected = Message {
-            input: "test|fields\ranother|segment\r".to_string(),
+            input: "MSH|^~\\&|fields\ranother|segment\r".to_string(),
             segments: vec![
                 Segment {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["test".to_string()],
+                                sub_components: vec!["MSH".to_string()],
                             }],
+                        },
+                        Field {
+                            repeats: vec![
+                                Repeat {
+                                    sub_components: vec!["".to_string(), "".to_string()],
+                                },
+                                Repeat {
+                                    sub_components: vec!["\\&".to_string()],
+                                },
+                            ],
                         },
                         Field {
                             repeats: vec![Repeat {
@@ -104,16 +125,27 @@ mod tests {
 
     #[test]
     fn test_message_with_message_delimiter_included() {
-        let result = MessageParser::parse_message("test|fields\ranother|segment\r\r".to_string()); //note the trailing \r\r
+        let result =
+            MessageParser::parse_message("MSH|^~\\&|fields\ranother|segment\r\r".to_string()); //note the trailing \r\r
         let expected = Message {
-            input: "test|fields\ranother|segment\r\r".to_string(),
+            input: "MSH|^~\\&|fields\ranother|segment\r\r".to_string(),
             segments: vec![
                 Segment {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["test".to_string()],
+                                sub_components: vec!["MSH".to_string()],
                             }],
+                        },
+                        Field {
+                            repeats: vec![
+                                Repeat {
+                                    sub_components: vec!["".to_string(), "".to_string()],
+                                },
+                                Repeat {
+                                    sub_components: vec!["\\&".to_string()],
+                                },
+                            ],
                         },
                         Field {
                             repeats: vec![Repeat {

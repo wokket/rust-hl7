@@ -34,9 +34,9 @@ impl FieldParser {
         let mut repeats = Vec::new(); //TODO: Add reasonable minimum capacity if it benches faster
 
         for repeat_value in FieldParser::get_repeats(input, delims) {
-            let subcomponents = FieldParser::get_components(repeat_value, delims);
+            let components = FieldParser::get_components(repeat_value, delims);
             let repeat = Repeat {
-                sub_components: subcomponents,
+                components: components,
             };
 
             repeats.push(repeat);
@@ -101,7 +101,7 @@ mod tests {
         let input = "Test Value";
         let expected = Field {
             repeats: vec![Repeat {
-                sub_components: vec!["Test Value".to_string()],
+                components: vec!["Test Value".to_string()],
             }],
         };
 
@@ -115,10 +115,10 @@ mod tests {
         let expected = Field {
             repeats: vec![
                 Repeat {
-                    sub_components: vec!["Test Value".to_string()],
+                    components: vec!["Test Value".to_string()],
                 },
                 Repeat {
-                    sub_components: vec!["another Value".to_string()],
+                    components: vec!["another Value".to_string()],
                 },
             ],
         };
@@ -133,7 +133,7 @@ mod tests {
         let expected = Field {
             repeats: vec![
                 Repeat {
-                    sub_components: vec![
+                    components: vec![
                         "260 GOODWIN CREST DRIVE".to_string(),
                         "".to_string(),
                         "BIRMINGHAM".to_string(),
@@ -144,7 +144,7 @@ mod tests {
                     ],
                 },
                 Repeat {
-                    sub_components: vec![
+                    components: vec![
                         "NICKELL’S PICKLES".to_string(),
                         "10000 W 100TH AVE".to_string(),
                         "BIRMINGHAM".to_string(),

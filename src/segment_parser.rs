@@ -5,10 +5,6 @@ use super::field_parser::FieldParser;
 use super::*;
 
 impl SegmentParser {
-    fn _get_fields(input: &str) -> Vec<&str> {
-        input.split("|").collect()
-    }
-
     crate fn parse_segment(input: &str, delims: &Seperators) -> Segment {
         let fields = input
             .trim() //remove leading and trailing berko chars (bigger issue when debugging)
@@ -27,45 +23,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_basic_field_splitting() {
-        let mut result = SegmentParser::_get_fields("test|fields");
-        assert_eq!(["test", "fields"], result.as_slice());
-
-        result =
-            SegmentParser::_get_fields("MSH|^~\\&||.|||199908180016||ADT^A04|ADT.1.1698593|P|2.7");
-
-        assert_eq!(
-            [
-                "MSH",
-                "^~\\&",
-                "",
-                ".",
-                "",
-                "",
-                "199908180016",
-                "",
-                "ADT^A04",
-                "ADT.1.1698593",
-                "P",
-                "2.7"
-            ],
-            result.as_slice()
-        );
-    }
-
-    #[test]
     fn test_basic_field_construction() {
         let input = "Test|Value";
         let expected = Segment {
             fields: vec![
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["Test".to_string()],
+                        components: vec!["Test".to_string()],
                     }],
                 },
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["Value".to_string()],
+                        components: vec!["Value".to_string()],
                     }],
                 },
             ],
@@ -82,23 +51,23 @@ mod tests {
             fields: vec![
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["OBR".to_string()],
+                        components: vec!["OBR".to_string()],
                     }],
                 },
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["1".to_string()],
+                        components: vec!["1".to_string()],
                     }],
                 },
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["20061019172719".to_string()],
+                        components: vec!["20061019172719".to_string()],
                     }],
                 },
                 Field { repeats: vec![] },
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec![
+                        components: vec![
                             "76770".to_string(),
                             "Ultrasound: retroperitoneal".to_string(),
                             "C4".to_string(),
@@ -109,7 +78,7 @@ mod tests {
                 Field { repeats: vec![] },
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["12349876".to_string()],
+                        components: vec!["12349876".to_string()],
                     }],
                 },
             ],

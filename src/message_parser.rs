@@ -32,22 +32,22 @@ mod tests {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["MSH".to_string()],
+                                components: vec!["MSH".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![
                                 Repeat {
-                                    sub_components: vec!["".to_string(), "".to_string()],
+                                    components: vec!["".to_string(), "".to_string()],
                                 },
                                 Repeat {
-                                    sub_components: vec!["\\&".to_string()],
+                                    components: vec!["\\&".to_string()],
                                 },
                             ],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["fields".to_string()],
+                                components: vec!["fields".to_string()],
                             }],
                         },
                     ],
@@ -56,12 +56,12 @@ mod tests {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["another".to_string()],
+                                components: vec!["another".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["segment".to_string()],
+                                components: vec!["segment".to_string()],
                             }],
                         },
                     ],
@@ -83,22 +83,22 @@ mod tests {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["MSH".to_string()],
+                                components: vec!["MSH".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![
                                 Repeat {
-                                    sub_components: vec!["".to_string(), "".to_string()],
+                                    components: vec!["".to_string(), "".to_string()],
                                 },
                                 Repeat {
-                                    sub_components: vec!["\\&".to_string()],
+                                    components: vec!["\\&".to_string()],
                                 },
                             ],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["fields".to_string()],
+                                components: vec!["fields".to_string()],
                             }],
                         },
                     ],
@@ -107,12 +107,12 @@ mod tests {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["another".to_string()],
+                                components: vec!["another".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["segment".to_string()],
+                                components: vec!["segment".to_string()],
                             }],
                         },
                     ],
@@ -134,22 +134,22 @@ mod tests {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["MSH".to_string()],
+                                components: vec!["MSH".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![
                                 Repeat {
-                                    sub_components: vec!["".to_string(), "".to_string()],
+                                    components: vec!["".to_string(), "".to_string()],
                                 },
                                 Repeat {
-                                    sub_components: vec!["\\&".to_string()],
+                                    components: vec!["\\&".to_string()],
                                 },
                             ],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["fields".to_string()],
+                                components: vec!["fields".to_string()],
                             }],
                         },
                     ],
@@ -158,12 +158,12 @@ mod tests {
                     fields: vec![
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["another".to_string()],
+                                components: vec!["another".to_string()],
                             }],
                         },
                         Field {
                             repeats: vec![Repeat {
-                                sub_components: vec!["segment".to_string()],
+                                components: vec!["segment".to_string()],
                             }],
                         },
                     ],

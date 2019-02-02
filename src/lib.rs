@@ -63,7 +63,7 @@ impl Seperators {
 #[derive(Debug, PartialEq)]
 #[repr(C)]
 pub struct Repeat {
-    pub sub_components: Vec<String>,
+    pub components: Vec<String>,
 }
 
 /// A Field is a single 'value between the pipes'.
@@ -94,13 +94,15 @@ pub struct Message {
 
 /// A HL7 field can contain multiple 'repeats', eg to support multiple nationalities for a patient.
 impl Repeat {
-    /// Returns all subcomponents for this repeat as a single string.  If multiple subcomponents are present they are joined
+    /// Returns all components for this repeat as a single string.  If multiple components are present they are joined
     /// with the standard HL7 '^' separator.
     pub fn get_as_string(&self) -> String {
-        if self.sub_components.len() == 0 {
+        let delims = Seperators::default();
+
+        if self.components.len() == 0 {
             return "".to_string();
         } else {
-            return self.sub_components.join("^");
+            return self.components.join(delims.component.to_string().as_str()); //TODO: How to convert char to &str in a sane way?
         }
     }
 }
@@ -177,7 +179,7 @@ mod tests {
     #[test]
     fn repeat_get_all_as_string_single_simple_value() {
         let r = Repeat {
-            sub_components: vec!["Simple Repeat".to_string()],
+            components: vec!["Simple Repeat".to_string()],
         };
 
         let actual = r.get_as_string();
@@ -187,7 +189,7 @@ mod tests {
     #[test]
     fn repeat_get_all_as_string_multi_components() {
         let r = Repeat {
-            sub_components: vec!["Multiple".to_string(), "Components".to_string()],
+            components: vec!["Multiple".to_string(), "Components".to_string()],
         };
 
         let actual = r.get_as_string();
@@ -198,7 +200,7 @@ mod tests {
     fn field_get_all_as_string_single_simple_value() {
         let f = Field {
             repeats: vec![Repeat {
-                sub_components: vec!["Simple Repeat".to_string()],
+                components: vec!["Simple Repeat".to_string()],
             }],
         };
 
@@ -211,10 +213,10 @@ mod tests {
         let f = Field {
             repeats: vec![
                 Repeat {
-                    sub_components: vec!["Repeat 1".to_string()],
+                    components: vec!["Repeat 1".to_string()],
                 },
                 Repeat {
-                    sub_components: vec!["Repeat 2".to_string()],
+                    components: vec!["Repeat 2".to_string()],
                 },
             ],
         };
@@ -264,12 +266,12 @@ mod tests {
             fields: vec![
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["OBR".to_string()],
+                        components: vec!["OBR".to_string()],
                     }],
                 },
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["segment".to_string()],
+                        components: vec!["segment".to_string()],
                     }],
                 },
             ],

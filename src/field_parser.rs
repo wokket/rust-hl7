@@ -7,13 +7,13 @@ use super::*;
 impl FieldParser {
     /// This method is expecting to receive a single Repeat worth of data only...
     /// If called with an empty repeat (ie "") an empty vec (ie []) is returned
-    fn get_components_naiive(input: &str) -> Vec<String> {
+    fn get_components(input: &str, delims: &Seperators) -> Vec<String> {
         if input.len() == 0 {
             return Vec::<String>::new(); //empty, no-alloc
         }
 
         let result = input
-            .split("^")
+            .split(delims.component)
             .map(|e| e.to_string()) // copy slice to a brand new string, we need a seperate obj in order to return it.
             .collect();
         result
@@ -21,22 +21,22 @@ impl FieldParser {
 
     /// This method splits a field value (ie, the thing between the pipes) into a set of 0 or more repeats
     /// If called with an empty field value (ie "") an empty vec (ie []) is returned.
-    fn get_repeats(input: &str) -> Vec<&str> {
+    fn get_repeats<'a>(input: &'a str, delims: &Seperators) -> Vec<&'a str> {
         if input.len() == 0 {
             return Vec::<&str>::new();
         }
 
-        let result = input.split("~").collect();
+        let result = input.split(delims.repeat).collect();
         result
     }
 
-    pub fn parse_field(input: &str) -> Field {
+    crate fn parse_field(input: &str, delims: &Seperators) -> Field {
         let mut repeats = Vec::new(); //TODO: Add reasonable minimum capacity if it benches faster
 
-        for repeat_value in FieldParser::get_repeats(input) {
-            let subcomponents = FieldParser::get_components_naiive(repeat_value);
+        for repeat_value in FieldParser::get_repeats(input, delims) {
+            let components = FieldParser::get_components(repeat_value, delims);
             let repeat = Repeat {
-                sub_components: subcomponents,
+                components: components,
             };
 
             repeats.push(repeat);
@@ -52,46 +52,47 @@ mod tests {
 
     #[test]
     fn test_component_splitting() {
-        let mut result = FieldParser::get_components_naiive("test");
+        let mut result = FieldParser::get_components("test", &Seperators::default());
         assert_eq!(["test"], result.as_slice());
 
-        result = FieldParser::get_components_naiive("test value");
+        result = FieldParser::get_components("test value", &Seperators::default());
         assert_eq!(["test value"], result.as_slice());
 
-        result = FieldParser::get_components_naiive("test^value");
+        result = FieldParser::get_components("test^value", &Seperators::default());
         assert_eq!(["test", "value"], result.as_slice());
 
-        result = FieldParser::get_components_naiive("test^^value");
+        result = FieldParser::get_components("test^^value", &Seperators::default());
         assert_eq!(["test", "", "value"], result.as_slice());
 
-        result = FieldParser::get_components_naiive("test^^value^");
+        result = FieldParser::get_components("test^^value^", &Seperators::default());
         assert_eq!(["test", "", "value", ""], result.as_slice());
 
-        result = FieldParser::get_components_naiive("PO BOX 23523^WELLINGTON^ON^98111");
+        result =
+            FieldParser::get_components("PO BOX 23523^WELLINGTON^ON^98111", &Seperators::default());
         assert_eq!(
             ["PO BOX 23523", "WELLINGTON", "ON", "98111"],
             result.as_slice()
         );
 
-        result = FieldParser::get_components_naiive("");
+        result = FieldParser::get_components("", &Seperators::default());
         assert_eq!([] as [&str; 0], result.as_slice());
     }
 
     #[test]
     fn test_repeat_splitting() {
-        let mut result = FieldParser::get_repeats("test");
+        let mut result = FieldParser::get_repeats("test", &Seperators::default());
         assert_eq!(["test"], result.as_slice());
 
-        result = FieldParser::get_repeats("test value");
+        result = FieldParser::get_repeats("test value", &Seperators::default());
         assert_eq!(["test value"], result.as_slice());
 
-        result = FieldParser::get_repeats("test~value");
+        result = FieldParser::get_repeats("test~value", &Seperators::default());
         assert_eq!(["test", "value"], result.as_slice());
 
-        result = FieldParser::get_repeats("test^value~another^^value^");
+        result = FieldParser::get_repeats("test^value~another^^value^", &Seperators::default());
         assert_eq!(["test^value", "another^^value^"], result.as_slice());
 
-        result = FieldParser::get_repeats("");
+        result = FieldParser::get_repeats("", &Seperators::default());
         assert_eq!([] as [&str; 0], result.as_slice());
     }
 
@@ -100,11 +101,11 @@ mod tests {
         let input = "Test Value";
         let expected = Field {
             repeats: vec![Repeat {
-                sub_components: vec!["Test Value".to_string()],
+                components: vec!["Test Value".to_string()],
             }],
         };
 
-        let actual = FieldParser::parse_field(input);
+        let actual = FieldParser::parse_field(input, &Seperators::default());
         assert_eq!(expected, actual);
     }
 
@@ -114,15 +115,15 @@ mod tests {
         let expected = Field {
             repeats: vec![
                 Repeat {
-                    sub_components: vec!["Test Value".to_string()],
+                    components: vec!["Test Value".to_string()],
                 },
                 Repeat {
-                    sub_components: vec!["another Value".to_string()],
+                    components: vec!["another Value".to_string()],
                 },
             ],
         };
 
-        let actual = FieldParser::parse_field(input);
+        let actual = FieldParser::parse_field(input, &Seperators::default());
         assert_eq!(expected, actual);
     }
 
@@ -132,7 +133,7 @@ mod tests {
         let expected = Field {
             repeats: vec![
                 Repeat {
-                    sub_components: vec![
+                    components: vec![
                         "260 GOODWIN CREST DRIVE".to_string(),
                         "".to_string(),
                         "BIRMINGHAM".to_string(),
@@ -143,7 +144,7 @@ mod tests {
                     ],
                 },
                 Repeat {
-                    sub_components: vec![
+                    components: vec![
                         "NICKELL’S PICKLES".to_string(),
                         "10000 W 100TH AVE".to_string(),
                         "BIRMINGHAM".to_string(),
@@ -156,7 +157,7 @@ mod tests {
             ],
         };
 
-        let actual = FieldParser::parse_field(input);
+        let actual = FieldParser::parse_field(input, &Seperators::default());
         assert_eq!(expected, actual);
     }
 

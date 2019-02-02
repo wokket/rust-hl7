@@ -1,4 +1,5 @@
 #![feature(test)]
+#![feature(crate_visibility_modifier)]
 
 extern crate itertools;
 extern crate libc;
@@ -11,13 +12,58 @@ mod segment_parser;
 
 use itertools::Itertools;
 
+struct Seperators {
+    /// constant value, spec fixed to '\r' (ASCII 13, 0x0D)
+    segment: char,
+    field: char,
+    repeat: char,
+    component: char,
+    subcomponent: char,
+
+    escape_char: char,
+}
+
+impl Seperators {
+    /// Create a Seperator with th default (most common) HL7 values
+    fn default() -> Seperators {
+        Seperators {
+            segment: '\r',
+            field: '|',
+            repeat: '~',
+            component: '^',
+            subcomponent: '&',
+            escape_char: '\\',
+        }
+    }
+
+    // Create a Seperators with the values provided in the message.
+    // assumes the message starts with ```MSH|^~\&|``` or equiv for custom seperators
+    fn new(message: &str) -> Seperators {
+        //assuming we have a valid message
+        let mut chars = message.char_indices();
+
+        assert_eq!(Some((0, 'M')), chars.next());
+        assert_eq!(Some((1, 'S')), chars.next());
+        assert_eq!(Some((2, 'H')), chars.next());
+
+        Seperators {
+            segment: '\r',
+            field: chars.next().unwrap().1,
+            component: chars.next().unwrap().1,
+            repeat: chars.next().unwrap().1,
+            escape_char: chars.next().unwrap().1,
+            subcomponent: chars.next().unwrap().1,
+        }
+    }
+}
+
 /// A repeat of a field is a set of 0 or more sub component values.
 /// Currently all values are stored as their original string representations.  Methods to convert
 /// the values to their HL7-spec types is outside the scope of the parser.
 #[derive(Debug, PartialEq)]
 #[repr(C)]
 pub struct Repeat {
-    pub sub_components: Vec<String>,
+    pub components: Vec<String>,
 }
 
 /// A Field is a single 'value between the pipes'.
@@ -48,13 +94,15 @@ pub struct Message {
 
 /// A HL7 field can contain multiple 'repeats', eg to support multiple nationalities for a patient.
 impl Repeat {
-    /// Returns all subcomponents for this repeat as a single string.  If multiple subcomponents are present they are joined
+    /// Returns all components for this repeat as a single string.  If multiple components are present they are joined
     /// with the standard HL7 '^' separator.
     pub fn get_as_string(&self) -> String {
-        if self.sub_components.len() == 0 {
+        let delims = Seperators::default();
+
+        if self.components.len() == 0 {
             return "".to_string();
         } else {
-            return self.sub_components.join("^");
+            return self.components.join(delims.component.to_string().as_str()); //TODO: How to convert char to &str in a sane way?
         }
     }
 }
@@ -84,7 +132,9 @@ impl Message {
     }
 
     pub fn build_from_input(&mut self) {
-        let iter = self.input.split('\r');
+        let delimiters = Seperators::new(&self.input);
+
+        let iter = self.input.split(delimiters.segment);
 
         for segment_value in iter {
             if segment_value.len() == 0 {
@@ -92,7 +142,7 @@ impl Message {
                 break;
             }
 
-            let segment = segment_parser::SegmentParser::parse_segment(segment_value);
+            let segment = segment_parser::SegmentParser::parse_segment(segment_value, &delimiters);
             self.segments.push(segment);
         }
     }
@@ -114,9 +164,22 @@ mod tests {
     use super::*;
 
     #[test]
+    fn ensure_seperators_load_correctly() {
+        let expected = Seperators::default();
+        let actual = Seperators::new("MSH|^~\\&|CATH|StJohn|AcmeHIS|StJohn|20061019172719||ACK^O01|MSGID12349876|P|2.3\rMSA|AA|MSGID12349876");
+
+        assert_eq!(expected.component, actual.component);
+        assert_eq!(expected.escape_char, actual.escape_char);
+        assert_eq!(expected.field, actual.field);
+        assert_eq!(expected.repeat, actual.repeat);
+        assert_eq!(expected.segment, actual.segment);
+        assert_eq!(expected.subcomponent, actual.subcomponent);
+    }
+
+    #[test]
     fn repeat_get_all_as_string_single_simple_value() {
         let r = Repeat {
-            sub_components: vec!["Simple Repeat".to_string()],
+            components: vec!["Simple Repeat".to_string()],
         };
 
         let actual = r.get_as_string();
@@ -126,7 +189,7 @@ mod tests {
     #[test]
     fn repeat_get_all_as_string_multi_components() {
         let r = Repeat {
-            sub_components: vec!["Multiple".to_string(), "Components".to_string()],
+            components: vec!["Multiple".to_string(), "Components".to_string()],
         };
 
         let actual = r.get_as_string();
@@ -137,7 +200,7 @@ mod tests {
     fn field_get_all_as_string_single_simple_value() {
         let f = Field {
             repeats: vec![Repeat {
-                sub_components: vec!["Simple Repeat".to_string()],
+                components: vec!["Simple Repeat".to_string()],
             }],
         };
 
@@ -150,10 +213,10 @@ mod tests {
         let f = Field {
             repeats: vec![
                 Repeat {
-                    sub_components: vec!["Repeat 1".to_string()],
+                    components: vec!["Repeat 1".to_string()],
                 },
                 Repeat {
-                    sub_components: vec!["Repeat 2".to_string()],
+                    components: vec!["Repeat 2".to_string()],
                 },
             ],
         };
@@ -203,12 +266,12 @@ mod tests {
             fields: vec![
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["OBR".to_string()],
+                        components: vec!["OBR".to_string()],
                     }],
                 },
                 Field {
                     repeats: vec![Repeat {
-                        sub_components: vec!["segment".to_string()],
+                        components: vec!["segment".to_string()],
                     }],
                 },
             ],

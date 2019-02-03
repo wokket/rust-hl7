@@ -5,4 +5,4 @@ cargo b --release
 strip ./target/release/librusthl7.so
 
 cp ./target/release/librusthl7.so ./dotnet 
-dotnet run -c release --project ./dotnet/ConsoleApp1.csproj
+sudo dotnet run -c release --project ./dotnet/ConsoleApp1.csproj

@@ -10,7 +10,7 @@ namespace ConsoleApp1
 {
     internal class Program
     {
-       private static void Main(string[] args)
+        private static void Main(string[] args)
         {
             //RUST
             using (var mh = Native.BuildMessage(NhapiVsRustHL7.ORU_TEXT))
@@ -36,8 +36,14 @@ namespace ConsoleApp1
             var field = t.Get("/.OBR-7"); //get a rando field from the middle of the thing
             Console.WriteLine($"NHapi retrieved value: '{field}'");
 
+            //Tims Simple Parser
+            var timsParser = new TimsSimpleParser();
+            var hl7Message3 = timsParser.Parse(NhapiVsRustHL7.ORU_TEXT);
+            v = hl7Message3.GetField("OBR", 7);
+            Console.WriteLine($"Tims Simple .Net Parser retrieved value: '{v}'");
+
             //Console.Read();
-            var summary = BenchmarkRunner.Run<NhapiVsRustHL7>( new AllowNonOptimized()); //HL7-DotNet has published a debug build :(
+            var summary = BenchmarkRunner.Run<NhapiVsRustHL7>(new AllowNonOptimized()); //HL7-DotNet has published a debug build :(
 
         }
 

@@ -157,6 +157,13 @@ impl Message {
             })
             .collect()
     }
+
+    pub fn get_field(&self, segment_type: &str, field_index: usize) -> String {
+        let matching_segments = self.get_segments(segment_type);
+        let segment = matching_segments[0];
+        let result = segment.fields[field_index].get_all_as_string();
+        result
+    }
 }
 
 #[cfg(test)]

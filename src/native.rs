@@ -68,13 +68,7 @@ pub extern "C" fn get_field(
 
     let segment_str = segment_cstr.to_str().unwrap();
 
-    //println!("Getting field {} from '{}'", field_index, segment_str);
-
-    let matching_segments = obj.get_segments(segment_str);
-    // println!("Found {} matching segments", matching_segments.len());
-
-    let segment = matching_segments[0];
-    let result = segment.fields[field_index].get_all_as_string();
+    let result = obj.get_field(segment_str, field_index);
     //println!("Returning field value: {}", result);
 
     let c_string = CString::new(result).unwrap();

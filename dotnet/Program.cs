@@ -13,7 +13,7 @@ namespace ConsoleApp1
         private static void Main(string[] args)
         {
             //RUST
-            using (var mh = Native.BuildMessage(NhapiVsRustHL7.ORU_TEXT))
+            /* using (var mh = Native.BuildMessage(NhapiVsRustHL7.ORU_TEXT))
             { //pointer to Message
 
                 using (var fieldValue = Native.GetField(mh.DangerousGetHandle(), "OBR", 7))
@@ -41,9 +41,18 @@ namespace ConsoleApp1
             var hl7Message3 = timsParser.Parse(NhapiVsRustHL7.ORU_TEXT);
             v = hl7Message3.GetField("OBR", 7);
             Console.WriteLine($"Tims Simple .Net Parser retrieved value: '{v}'");
+            */
+
+            for (var i = 0; i < 100_000; i++)
+            {
+                var timsParser = new TimsSimpleParser();
+                var hl7Message3 = timsParser.Parse(NhapiVsRustHL7.ORU_TEXT);
+                var v = hl7Message3.GetField("OBR", 7);
+            }
+
 
             //Console.Read();
-            var summary = BenchmarkRunner.Run<NhapiVsRustHL7>(new AllowNonOptimized()); //HL7-DotNet has published a debug build :(
+            //var summary = BenchmarkRunner.Run<NhapiVsRustHL7>(new AllowNonOptimized()); //HL7-DotNet has published a debug build :(
 
         }
 

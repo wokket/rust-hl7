@@ -11,6 +11,14 @@ name="rusthl7"
 path="src/lib.rs"
 crate-type = ["rlib", "dylib"]
 
+[[bin]]
+name="test_app"
+path="src/bin.rs"
+
+[profile.release]
+debug = true #temp include debug symbols for perf profiling
+
+
 [dependencies]
 itertools = "0.8.0"
 libc = "0.2.48"

@@ -9,7 +9,6 @@ license = "MIT OR Apache-2.0"
 [lib]
 name="rusthl7"
 path="src/lib.rs"
-crate-type = ["rlib", "dylib"]
 
 [[bin]]
 name="test_app"

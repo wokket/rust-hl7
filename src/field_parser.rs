@@ -30,7 +30,7 @@ impl FieldParser {
         result
     }
 
-    crate fn parse_field(input: &str, delims: &Seperators) -> Field {
+    pub fn parse_field(input: &str, delims: &Seperators) -> Field {
         let mut repeats = Vec::new(); //TODO: Add reasonable minimum capacity if it benches faster
 
         for repeat_value in FieldParser::get_repeats(input, delims) {

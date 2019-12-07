@@ -1,6 +1,3 @@
-// #![feature(test)]
-extern crate rusthl7;
-
 use rusthl7::*;
 
 // This is a dev-only executable for testing functionality, not for general distribution.

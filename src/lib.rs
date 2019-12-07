@@ -1,18 +1,11 @@
-#![feature(test)]
-#![feature(crate_visibility_modifier)]
-
-extern crate itertools;
-extern crate libc;
-extern crate test;
-
-mod field_parser;
+pub mod field_parser;
 pub mod message_parser;
 pub mod native;
-mod segment_parser;
+pub mod segment_parser;
 
 use itertools::Itertools;
 
-struct Seperators {
+pub struct Seperators {
     /// constant value, spec fixed to '\r' (ASCII 13, 0x0D)
     segment: char,
     field: char,
@@ -25,7 +18,7 @@ struct Seperators {
 
 impl Seperators {
     /// Create a Seperator with th default (most common) HL7 values
-    fn default() -> Seperators {
+    pub fn default() -> Seperators {
         Seperators {
             segment: '\r',
             field: '|',
@@ -61,7 +54,6 @@ impl Seperators {
 /// Currently all values are stored as their original string representations.  Methods to convert
 /// the values to their HL7-spec types is outside the scope of the parser.
 #[derive(Debug, PartialEq)]
-#[repr(C)]
 pub struct Repeat {
     pub components: Vec<String>,
 }
@@ -69,14 +61,12 @@ pub struct Repeat {
 /// A Field is a single 'value between the pipes'.
 /// It consists of (0 or more) repeats.
 #[derive(Debug, PartialEq)]
-#[repr(C)]
 pub struct Field {
     pub repeats: Vec<Repeat>,
 }
 
 /// A single segment, 0x13 delimited line from a source HL7 message consisting of multiple fields.
 #[derive(Debug, PartialEq)]
-#[repr(C)]
 pub struct Segment {
     pub fields: Vec<Field>,
 }
@@ -84,7 +74,6 @@ pub struct Segment {
 /// A Message is an entire HL7 message parsed into it's consitituent segments, fields, repeats and subcomponents
 /// It consists of (1 or more) Segments.
 #[derive(Debug, PartialEq)]
-#[repr(C)]
 pub struct Message {
     /// The source string that was parsed to form this message.
     /// We need our own copy to ensure the &str's are referencing a string that lives long enough in an FFI scenario

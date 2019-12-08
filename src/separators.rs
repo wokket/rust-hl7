@@ -6,7 +6,7 @@ use std::str::FromStr;
 /// use a default set (available from `Separators::default()`)
 pub struct Separators {
     /// constant value, spec fixed to '\r' (ASCII 13, 0x0D)
-    segment: char,
+    pub segment: char,
     field: char,
     repeat: char,
     component: char,

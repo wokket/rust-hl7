@@ -7,14 +7,24 @@ use std::str::FromStr;
 /// It consists of (1 or more) Segments.
 #[derive(Debug, PartialEq)]
 pub struct Message {
-    Segments: Vec<Segment>,
+    segments: Vec<Segment>,
 }
 
 impl FromStr for Message {
     type Err = Hl7ParseError;
 
-    fn FromStr(input: &str) -> Result<Self, Self::Err> {
-        let delimiters = String::parse::<Separators>(input);
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        let delimiters = str::parse::<Separators>(input)?;
+        let mut msg = Message {
+            segments: Vec::new(),
+        };
+
+        for line in input.split(delimiters.segment) {
+            let seg = Segment::parse(line, &delimiters)?;
+            msg.segments.push(seg);
+        }
+
+        Ok(msg)
     }
 }
 
@@ -23,5 +33,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ensure_separators_load_correctly() {}
+    fn ensure_segments_are_added() {
+        let hl7 = "MSH|fields\rOBR|segment";
+        let msg = match str::parse::<Message>(hl7) {
+            Ok(x) => x,
+            Err(e) => {
+                assert!(false, e);
+                return;
+            }
+        };
+
+        assert_eq!(msg.segments.len(), 2);
+    }
 }

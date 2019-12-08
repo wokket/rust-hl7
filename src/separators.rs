@@ -1,7 +1,7 @@
 use super::*;
 use std::str::FromStr;
 
-/// A helper struct to store the separator characters used to parse this message.
+/// A helper struct to store the separator (delimiter) characters used to parse this message.
 /// Note that HL7 allows each _message_ to define it's own separators, although most messages
 /// use a default set (available from `Separators::default()`)
 pub struct Separators {
@@ -110,7 +110,6 @@ mod tests {
         if let Err(Hl7ParseError::Msh1Msh2{error: _}) = Separators::new("SH|^~\\&|CATH|StJohn|AcmeHIS|StJohn|20061019172719||ACK^O01|MSGID12349876|P|2.3\rMSA|AA|MSGID12349876")
         {
               //nop, we're good
-
         } else {
             assert!(false); //should have failed here
         }

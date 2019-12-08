@@ -1,3 +1,5 @@
+pub mod message;
+pub mod segments;
 pub mod separators;
 
 use failure::Fail;

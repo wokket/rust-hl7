@@ -1,3 +1,4 @@
+pub mod fields;
 pub mod message;
 pub mod segments;
 pub mod separators;

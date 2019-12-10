@@ -4,7 +4,7 @@ use super::*;
 
 /// A Message is an entire HL7 message parsed into it's constituent segments, fields, repeats and subcomponents,
 /// and it consists of (1 or more) Segments.
-/// Message takes ownership of the source HL7 string, and parses it into &str slices (minimising copying)
+/// Message parses the source string into &str slices (minimising copying)
 #[derive(Debug, PartialEq)]
 pub struct Message<'a> {
     source: &'a str,
@@ -12,7 +12,7 @@ pub struct Message<'a> {
 }
 
 impl<'a> Message<'a> {
-    /// Takes the source HL7 string (owned) and parses it into this message.  Segments
+    /// Takes the source HL7 string and parses it into this message.  Segments
     /// and other data are slices (`&str`) into the source HL7
     pub fn from_str(input: &'a str) -> Result<Self, Hl7ParseError> {
         let delimiters = str::parse::<Separators>(input)?;

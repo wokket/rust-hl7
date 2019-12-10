@@ -7,7 +7,7 @@ use std::str::FromStr;
 pub struct Separators {
     /// constant value, spec fixed to '\r' (ASCII 13, 0x0D)
     pub segment: char,
-    field: char,
+    pub field: char,
     repeat: char,
     component: char,
     subcomponent: char,
@@ -70,48 +70,39 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ensure_separators_load_correctly() {
+    fn ensure_separators_load_correctly() -> Result<(), Hl7ParseError> {
         let expected = Separators::default();
-        let actual = Separators::new("MSH|^~\\&|CATH|StJohn|AcmeHIS|StJohn|20061019172719||ACK^O01|MSGID12349876|P|2.3\rMSA|AA|MSGID12349876");
-        match actual {
-            Ok(actual) => {
-                assert_eq!(expected.component, actual.component);
-                assert_eq!(expected.escape_char, actual.escape_char);
-                assert_eq!(expected.field, actual.field);
-                assert_eq!(expected.repeat, actual.repeat);
-                assert_eq!(expected.segment, actual.segment);
-                assert_eq!(expected.subcomponent, actual.subcomponent);
-            }
-            _ => assert!(false),
-        }
+        let actual = Separators::new("MSH|^~\\&|CATH|StJohn|AcmeHIS|StJohn|20061019172719||ACK^O01|MSGID12349876|P|2.3\rMSA|AA|MSGID12349876")?;
+
+        assert_eq!(expected.component, actual.component);
+        assert_eq!(expected.escape_char, actual.escape_char);
+        assert_eq!(expected.field, actual.field);
+        assert_eq!(expected.repeat, actual.repeat);
+        assert_eq!(expected.segment, actual.segment);
+        assert_eq!(expected.subcomponent, actual.subcomponent);
+
+        Ok(())
     }
 
     #[test]
-    fn ensure_separators_load_from_string() {
+    fn ensure_separators_load_from_string() -> Result<(), Hl7ParseError> {
         let expected = Separators::default();
-        let actual = str::parse::<Separators>("MSH|^~\\&|CATH|StJohn|AcmeHIS|StJohn|20061019172719||ACK^O01|MSGID12349876|P|2.3\rMSA|AA|MSGID12349876");
+        let actual = str::parse::<Separators>("MSH|^~\\&|CATH|StJohn|AcmeHIS|StJohn|20061019172719||ACK^O01|MSGID12349876|P|2.3\rMSA|AA|MSGID12349876")?;
 
-        match actual {
-            Ok(actual) => {
-                assert_eq!(expected.component, actual.component);
-                assert_eq!(expected.escape_char, actual.escape_char);
-                assert_eq!(expected.field, actual.field);
-                assert_eq!(expected.repeat, actual.repeat);
-                assert_eq!(expected.segment, actual.segment);
-                assert_eq!(expected.subcomponent, actual.subcomponent);
-            }
-            _ => assert!(false),
-        }
+        assert_eq!(expected.component, actual.component);
+        assert_eq!(expected.escape_char, actual.escape_char);
+        assert_eq!(expected.field, actual.field);
+        assert_eq!(expected.repeat, actual.repeat);
+        assert_eq!(expected.segment, actual.segment);
+        assert_eq!(expected.subcomponent, actual.subcomponent);
+
+        Ok(())
     }
 
     #[test]
     fn ensure_missing_msh_causes_error() {
         //note the missing M
-        if let Err(Hl7ParseError::Msh1Msh2{error: _}) = Separators::new("SH|^~\\&|CATH|StJohn|AcmeHIS|StJohn|20061019172719||ACK^O01|MSGID12349876|P|2.3\rMSA|AA|MSGID12349876")
-        {
-              //nop, we're good
-        } else {
-            assert!(false); //should have failed here
-        }
+        let result = Separators::new("SH|^~\\&|CATH|StJohn|AcmeHIS|StJohn|20061019172719||ACK^O01|MSGID12349876|P|2.3\rMSA|AA|MSGID12349876");
+        assert!(result.is_err());
     }
 }

@@ -1,29 +1,31 @@
 use super::segments::*;
 use super::separators::Separators;
 use super::*;
-use std::str::FromStr;
 
-/// A Message is an entire HL7 message parsed into it's constituent segments, fields, repeats and subcomponent
-/// It consists of (1 or more) Segments.
+/// A Message is an entire HL7 message parsed into it's constituent segments, fields, repeats and subcomponents,
+/// and it consists of (1 or more) Segments.
+/// Message takes ownership of the source HL7 string, and parses it into &str slices (minimising copying)
 #[derive(Debug, PartialEq)]
-pub struct Message {
-    segments: Vec<Segment>,
+pub struct Message<'a> {
+    source: &'a str,
+    segments: Vec<Segment<'a>>,
 }
 
-impl FromStr for Message {
-    type Err = Hl7ParseError;
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+impl<'a> Message<'a> {
+    /// Takes the source HL7 string (owned) and parses it into this message.  Segments
+    /// and other data are slices (`&str`) into the source HL7
+    pub fn from_str(input: &'a str) -> Result<Self, Hl7ParseError> {
         let delimiters = str::parse::<Separators>(input)?;
-        let mut msg = Message {
-            segments: Vec::new(),
+
+        let segments: Result<Vec<Segment<'a>>, Hl7ParseError> = input
+            .split(delimiters.segment)
+            .map(|line| Segment::parse(line, &delimiters))
+            .collect();
+
+        let msg = Message {
+            source: input,
+            segments: segments?,
         };
-
-        for line in input.split(delimiters.segment) {
-            let seg = Segment::parse(line, &delimiters)?;
-            msg.segments.push(seg);
-        }
-
         Ok(msg)
     }
 }
@@ -33,16 +35,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ensure_segments_are_added() {
+    fn ensure_segments_are_added() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|fields\rOBR|segment";
-        let msg = match str::parse::<Message>(hl7) {
-            Ok(x) => x,
-            Err(e) => {
-                assert!(false, e);
-                return;
-            }
-        };
+        let msg = Message::from_str(hl7)?;
 
         assert_eq!(msg.segments.len(), 2);
+        Ok(())
     }
 }

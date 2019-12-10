@@ -14,16 +14,16 @@ pub struct Message<'a> {
 impl<'a> Message<'a> {
     /// Takes the source HL7 string and parses it into this message.  Segments
     /// and other data are slices (`&str`) into the source HL7
-    pub fn from_str(input: &'a str) -> Result<Self, Hl7ParseError> {
-        let delimiters = str::parse::<Separators>(input)?;
+    pub fn from_str(source: &'a str) -> Result<Self, Hl7ParseError> {
+        let delimiters = str::parse::<Separators>(source)?;
 
-        let segments: Result<Vec<Segment<'a>>, Hl7ParseError> = input
+        let segments: Result<Vec<Segment<'a>>, Hl7ParseError> = source
             .split(delimiters.segment)
             .map(|line| Segment::parse(line, &delimiters))
             .collect();
 
         let msg = Message {
-            source: input,
+            source: source,
             segments: segments?,
         };
         Ok(msg)

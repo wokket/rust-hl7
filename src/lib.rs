@@ -9,11 +9,22 @@ use failure::Fail;
 pub enum Hl7ParseError {
     #[fail(display = "Unexpected error: {}", error)]
     Generic { error: String },
+
     #[fail(
         display = "Failure parsing MSH1/MSH2 while discovering separator chars: {}",
         error
     )]
     Msh1Msh2 { error: String },
+
+    #[fail(display = "Required value missing")]
+    MissingRequiredValue,
+}
+
+impl From<std::option::NoneError> for Hl7ParseError {
+    fn from(input: NoneError) -> Self {
+        // this would only be called if we `?` a `None` somewhere.
+        Hl7ParseError::MissingRequiredValue
+    }
 }
 
 // /// A repeat of a field is a set of 0 or more sub component values.

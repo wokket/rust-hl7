@@ -25,7 +25,7 @@ impl<'a> Segment<'a> {
         let fields = fields?;
 
         let seg = match fields[0].into() {
-            "MSH" => Segment::MSH(MshSegment { fields }),
+            "MSH" => Segment::MSH(MshSegment::parse(&input, delims)?),
             _ => Segment::Generic(GenericSegment { fields }),
         };
 

@@ -76,47 +76,6 @@ impl From<NoneError> for Hl7ParseError {
 //     }
 // }
 
-// /// A Field is a single 'value between the pipes'.
-// /// It consists of (0 or more) repeats.
-// impl Field {
-//     // Returns a single String built from all the repeats.segment_parser
-//     // This value includes the standard '~' HL7 delimiter between repeats.
-//     // A copy  of the original data is made here (rather than returning &str)
-//     // as the value is expected to be returned to external callers who
-//     // shouldn't have to keep the entire source message alive
-//     // pub fn get_all_as_string(&self) -> String {
-//     //     if self.repeats.len() == 0 {
-//     //         return "".to_string();
-//     //     }
-
-//     //     self.repeats.iter().map(|r| r.get_as_string()).join("~")
-//     // }
-// }
-
-// impl Message {
-//     pub fn new(input: String) -> Message {
-//         Message {
-//             input: input,
-//             segments: Vec::new(),
-//         }
-//     }
-
-//     // pub fn build_from_input(&mut self) {
-//     //     let delimiters = Separators::new(&self.input);
-
-//     //     let iter = self.input.split(delimiters.segment);
-
-//     //     for segment_value in iter {
-//     //         if segment_value.len() == 0 {
-//     //             //we've hit the end-of-message blank line delimnter, proceed no further
-//     //             break;
-//     //         }
-
-//     //         let segment = segment_parser::SegmentParser::parse_segment(segment_value, &delimiters);
-//     //         self.segments.push(segment);
-//     //     }
-//     // }
-
 //     // pub fn get_segments(&self, segment_type: &str) -> Vec<&Segment> {
 //     //     self.segments
 //     //         .iter()

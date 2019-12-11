@@ -14,7 +14,7 @@ impl<'a> Field<'a> {
         Ok(Field::Generic(input))
     }
 
-    /// Converts a possible blank string into a possible blank field!  
+    /// Converts a possibly blank string into a possibly blank field!  
     /// Note this handles optional fields, not the nul (`""`) value.
     pub fn parse_optional(
         input: Option<&'a str>,
@@ -22,6 +22,7 @@ impl<'a> Field<'a> {
     ) -> Result<Option<Field<'a>>, Hl7ParseError> {
         match input {
             None => Ok(None),
+            Some(x) if x.len() == 0 => Ok(None),
             Some(x) => Ok(Some(Field::parse(x, delims)?)),
         }
     }
@@ -31,6 +32,44 @@ impl<'a> Field<'a> {
     pub fn value(&self) -> &'a str {
         match self {
             Field::Generic(s) => s,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_conditional_parse_handles_none() {
+        let d = Separators::default();
+
+        //if we pass a none value, we get a None back
+        match Field::parse_optional(None, &d) {
+            Ok(None) => assert!(true),
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn test_conditional_parse_handles_empty_string() {
+        let d = Separators::default();
+
+        //an empty string (as seen when `split()`ing) should be none
+        match Field::parse_optional(Some(""), &d) {
+            Ok(None) => assert!(true),
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn test_conditional_parse_handles_value_string() {
+        let d = Separators::default();
+
+        //an empty string (as seen when `split()`ing) should be none
+        match Field::parse_optional(Some("xxx"), &d) {
+            Ok(Some(field)) => assert_eq!(field.value(), "xxx"),
+            _ => assert!(false),
         }
     }
 }

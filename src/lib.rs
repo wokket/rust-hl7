@@ -1,9 +1,12 @@
+#![feature(try_trait)] //apparently required for our From impl below
+
 pub mod fields;
 pub mod message;
 pub mod segments;
 pub mod separators;
 
 use failure::Fail;
+use std::option::NoneError;
 
 #[derive(Debug, Fail)]
 pub enum Hl7ParseError {
@@ -17,13 +20,13 @@ pub enum Hl7ParseError {
     Msh1Msh2 { error: String },
 
     #[fail(display = "Required value missing")]
-    MissingRequiredValue,
+    MissingRequiredValue { error: NoneError },
 }
 
-impl From<std::option::NoneError> for Hl7ParseError {
-    fn from(input: NoneError) -> Self {
+impl From<NoneError> for Hl7ParseError {
+    fn from(error: NoneError) -> Self {
         // this would only be called if we `?` a `None` somewhere.
-        Hl7ParseError::MissingRequiredValue
+        Hl7ParseError::MissingRequiredValue { error }
     }
 }
 

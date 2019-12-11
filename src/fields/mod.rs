@@ -25,11 +25,10 @@ impl<'a> Field<'a> {
             Some(x) => Ok(Some(Field::parse(x, delims)?)),
         }
     }
-}
 
-// We currently use this conversion for matching Segment[0] to determine what type Segment to return.
-impl<'a> Into<&'a str> for Field<'a> {
-    fn into(self) -> &'a str {
+    /// Method to get the underlying value of this field.
+    /// If this is a GenericField this method does not allocate.
+    pub fn value(&self) -> &'a str {
         match self {
             Field::Generic(s) => s,
         }

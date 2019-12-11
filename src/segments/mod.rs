@@ -24,7 +24,7 @@ impl<'a> Segment<'a> {
 
         let fields = fields?;
 
-        let seg = match fields[0].into() {
+        let seg = match fields[0].value() {
             "MSH" => Segment::MSH(MshSegment::parse(&input, delims)?),
             _ => Segment::Generic(GenericSegment { fields }),
         };
@@ -52,11 +52,11 @@ mod tests {
 
     #[test]
     fn ensure_msh_is_returned() -> Result<(), Hl7ParseError> {
-        let hl7 = "MSH|field 1|field 2|field 3";
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
         let delims = Separators::default();
 
-        if let Segment::MSH(seg) = Segment::parse(hl7, &delims)? {
-            assert_eq!(seg.fields.len(), 4);
+        if let Segment::MSH(_) = Segment::parse(hl7, &delims)? {
+            //all good, fall through to ok
         } else {
             assert!(false);
         }

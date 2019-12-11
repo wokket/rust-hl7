@@ -36,7 +36,7 @@ mod tests {
 
     #[test]
     fn ensure_segments_are_added() -> Result<(), Hl7ParseError> {
-        let hl7 = "MSH|fields\rOBR|segment";
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
         let msg = Message::from_str(hl7)?;
 
         assert_eq!(msg.segments.len(), 2);

@@ -10,14 +10,7 @@ license = "MIT OR Apache-2.0"
 name="rusthl7"
 path="src/lib.rs"
 
-[[bin]]
-name="test_app"
-path="src/bin.rs"
-
-[profile.release]
-debug = true #temp include debug symbols for perf profiling
-
-
 [dependencies]
-itertools = "0.8.0"
-libc = "0.2.48"
+#itertools = "0.8"
+#libc = "0.2"
+failure = "0.1"

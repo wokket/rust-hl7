@@ -50,7 +50,7 @@ impl<'a> MshSegment<'a> {
             msh_4_sending_facility: Field::parse_optional(fields.next(), delims)?,
             msh_5_receiving_application: Field::parse_optional(fields.next(), delims)?,
             msh_6_receiving_facility: Field::parse_optional(fields.next(), delims)?,
-            msh_7_date_time_of_message: Field::parse(fields.next()?, delims)?,
+            msh_7_date_time_of_message: Field::parse_datetime(fields.next()?)?,
             msh_8_security: Field::parse_optional(fields.next(), delims)?,
             msh_9_message_type: Field::parse(fields.next()?, delims)?,
             msh_10_message_control_id: Field::parse(fields.next()?, delims)?,

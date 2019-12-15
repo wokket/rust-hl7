@@ -1,17 +1,30 @@
 use super::separators::Separators;
 use super::*;
+use fields::dtm::DTMField;
+
+pub mod dtm;
 
 /// Represents a single field inside the HL7.  Note that fields can include repeats, components and sub-components.
 /// See [the spec](http://www.hl7.eu/HL7v2x/v251/std251/ch02.html#Heading13) for more info
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Field<'a> {
+    /// A generic field that just holds a string.  Simple to use, nothing special in return.
     Generic(&'a str),
+    /// A HL7 DTM (Date Time field.  See [the spec](http://www.hl7.eu/refactored/dtDTM.html) for more info)
+    DateTime(DTMField<'a>)
 }
 
 impl<'a> Field<'a> {
     /// Convert the given line of text into a field.
-    pub fn parse(input: &'a str, delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
+    pub fn parse(input: &'a str, _delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
         Ok(Field::Generic(input))
+        //todo: repeats, field types etc
+    }
+
+    /// parses the given slice into a DTM (datetime) field 
+    pub fn parse_datetime(input: &'a str) -> Result<Field<'a>, Hl7ParseError>{
+       let info =  DTMField::parse(input)?;
+       Ok(Field::DateTime(info))
     }
 
     /// Converts a possibly blank string into a possibly blank field!  
@@ -32,6 +45,7 @@ impl<'a> Field<'a> {
     pub fn value(&self) -> &'a str {
         match self {
             Field::Generic(s) => s,
+            Field::DateTime(f) => f.value(),
         }
     }
 }

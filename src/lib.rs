@@ -8,7 +8,7 @@ pub mod separators;
 use failure::Fail;
 use std::option::NoneError;
 
-#[derive(Debug, Fail)]
+#[derive(Debug, Fail, PartialEq)]
 pub enum Hl7ParseError {
     #[fail(display = "Unexpected error: {}", error)]
     Generic { error: String },
@@ -21,6 +21,9 @@ pub enum Hl7ParseError {
 
     #[fail(display = "Required value missing")]
     MissingRequiredValue { error: NoneError },
+
+    #[fail(display = "Invalid Date/Time format: {}", error)]
+    InvalidDateTimeFormat{error: chrono::ParseError}
 }
 
 impl From<NoneError> for Hl7ParseError {

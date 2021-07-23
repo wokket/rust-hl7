@@ -1,34 +1,29 @@
-#![feature(try_trait)] //apparently required for our From impl below
-
 pub mod fields;
 pub mod message;
 pub mod segments;
 pub mod separators;
 
-use failure::Fail;
-use std::option::NoneError;
 
-#[derive(Debug, Fail)]
+
+#[derive(Debug, thiserror::Error)]
 pub enum Hl7ParseError {
-    #[fail(display = "Unexpected error: {}", error)]
-    Generic { error: String },
+    #[error("Unexpected error: {0}")]
+    Generic (String),
 
-    #[fail(
-        display = "Failure parsing MSH1/MSH2 while discovering separator chars: {}",
-        error
-    )]
-    Msh1Msh2 { error: String },
+    #[error("Failure parsing MSH1/MSH2 while discovering separator chars: {0}")]
+    Msh1Msh2 (String),
 
-    #[fail(display = "Required value missing")]
-    MissingRequiredValue { error: NoneError },
+    #[error("Required value missing")]
+    MissingRequiredValue()
 }
 
+/*
 impl From<NoneError> for Hl7ParseError {
     fn from(error: NoneError) -> Self {
         // this would only be called if we `?` a `None` somewhere.
         Hl7ParseError::MissingRequiredValue { error }
     }
-}
+}*/
 
 // /// A repeat of a field is a set of 0 or more sub component values.
 // /// Currently all values are stored as their original string representations.  Methods to convert

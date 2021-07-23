@@ -10,8 +10,17 @@ pub enum Field<'a> {
 
 impl<'a> Field<'a> {
     /// Convert the given line of text into a field.
-    pub fn parse(input: &'a str, delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
+    pub fn parse(input: &'a str, _delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
+        // TODO: Match on component delim and return one of two Field variants (Generic or Componentised??)... names are hard
         Ok(Field::Generic(input))
+    }
+
+    /// Used to hide the removal of NoneError for #2...  If passed `Some()` value it retursn a field with that value.  If passed `None() it returns an `Err(Hl7ParseError::MissingRequiredValue{})`
+    pub fn parse_mandatory(input: Option<&'a str>, delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
+        match input {
+            Some(string_value) => Field::parse(string_value, delims),
+            None => Err(Hl7ParseError::MissingRequiredValue{})
+        }
     }
 
     /// Converts a possibly blank string into a possibly blank field!  

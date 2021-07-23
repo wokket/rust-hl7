@@ -74,17 +74,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ensure_msh_fields_are_populated() -> Result<(), Box<dyn std::error::Error>> {
+    fn ensure_msh_fields_are_populated() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
         let delims = Separators::default();
 
         let msh = MshSegment::parse(hl7, &delims)?;
 
         assert_eq!(msh.msh_1_field_separator, '|');
-        assert_eq!(msh.msh_3_sending_application?.value(), "GHH LAB");
-        assert_eq!(msh.msh_4_sending_facility?.value(), "ELAB-3");
-        assert_eq!(msh.msh_5_receiving_application?.value(), "GHH OE");
-        assert_eq!(msh.msh_6_receiving_facility?.value(), "BLDG4");
+
+        let msh3 = msh.msh_3_sending_application.ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
+        assert_eq!(msh3.value(), "GHH LAB");
+        
+        let msh4 = msh.msh_4_sending_facility.ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
+        assert_eq!(msh4.value(), "ELAB-3");
+
+        let msh5 = msh.msh_5_receiving_application.ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
+        assert_eq!(msh5.value(), "GHH OE");
+
+        let msh6 = msh.msh_6_receiving_facility.ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
+        assert_eq!(msh6.value(), "BLDG4");
+
         assert_eq!(msh.msh_8_security, None); //blank field check
         assert_eq!(msh.msh_12_version_id.value(), "2.4"); //we got to the end ok
         Ok(())

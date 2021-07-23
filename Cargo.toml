@@ -11,4 +11,4 @@ name="rusthl7"
 path="src/lib.rs"
 
 [dependencies]
-failure = "0.1"
+thiserror = "1.0"

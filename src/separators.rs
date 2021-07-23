@@ -39,9 +39,7 @@ impl Separators {
             || Some((1, 'S')) != chars.next()
             || Some((2, 'H')) != chars.next()
         {
-            return Err(Hl7ParseError::Msh1Msh2 {
-                error: "Message doesn't start with 'MSH'".to_string(),
-            });
+            return Err(Hl7ParseError::Msh1Msh2 ("Message doesn't start with 'MSH'".to_string()));
         }
 
         Ok(Separators {

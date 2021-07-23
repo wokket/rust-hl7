@@ -3,21 +3,18 @@ pub mod message;
 pub mod segments;
 pub mod separators;
 
-use failure::Fail;
 
-#[derive(Debug, Fail)]
+
+#[derive(Debug, thiserror::Error)]
 pub enum Hl7ParseError {
-    #[fail(display = "Unexpected error: {}", error)]
-    Generic { error: String },
+    #[error("Unexpected error: {0}")]
+    Generic (String),
 
-    #[fail(
-        display = "Failure parsing MSH1/MSH2 while discovering separator chars: {}",
-        error
-    )]
-    Msh1Msh2 { error: String },
+    #[error("Failure parsing MSH1/MSH2 while discovering separator chars: {0}")]
+    Msh1Msh2 (String),
 
-    #[fail(display = "Required value missing")]
-    MissingRequiredValue //{ /*error: NoneError*/ }, // remmed for #2 until NoneError gets more stable.
+    #[error("Required value missing")]
+    MissingRequiredValue()
 }
 
 /*

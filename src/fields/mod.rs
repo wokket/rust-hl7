@@ -81,4 +81,24 @@ mod tests {
             _ => assert!(false),
         }
     }
+
+    #[test]
+    fn test_parse_mandatory_handles_some_value() {
+        let d = Separators::default();
+
+        match Field::parse_mandatory(Some("xxx"), &d) {
+            Ok(field) => assert_eq!(field.value(), "xxx"),
+            _ => assert!(false)
+        }
+    }
+
+    #[test]
+    fn test_parse_mandatory_throws_on_none() {
+        let d = Separators::default();
+
+        match Field::parse_mandatory(None, &d) {
+            Err(Hl7ParseError::MissingRequiredValue()) => assert!(true),
+            _ => assert!(false)
+        }
+    }
 }

@@ -38,7 +38,7 @@ pub struct MshSegment<'a> {
 impl<'a> MshSegment<'a> {
     pub fn parse(input: &'a str, delims: &Separators) -> Result<MshSegment<'a>, Hl7ParseError> {
         let mut fields = input.split(delims.field);
-
+    
         assert!(fields.next().unwrap() == "MSH");
 
         let _ = fields.next(); //consume the delimiter chars
@@ -50,12 +50,12 @@ impl<'a> MshSegment<'a> {
             msh_4_sending_facility: Field::parse_optional(fields.next(), delims)?,
             msh_5_receiving_application: Field::parse_optional(fields.next(), delims)?,
             msh_6_receiving_facility: Field::parse_optional(fields.next(), delims)?,
-            msh_7_date_time_of_message: Field::parse(fields.next()?, delims)?,
+            msh_7_date_time_of_message: Field::parse_mandatory(fields.next(), delims)?,
             msh_8_security: Field::parse_optional(fields.next(), delims)?,
-            msh_9_message_type: Field::parse(fields.next()?, delims)?,
-            msh_10_message_control_id: Field::parse(fields.next()?, delims)?,
-            msh_11_processing_id: Field::parse(fields.next()?, delims)?,
-            msh_12_version_id: Field::parse(fields.next()?, delims)?,
+            msh_9_message_type: Field::parse_mandatory(fields.next(), delims)?,
+            msh_10_message_control_id: Field::parse_mandatory(fields.next(), delims)?,
+            msh_11_processing_id: Field::parse_mandatory(fields.next(), delims)?,
+            msh_12_version_id: Field::parse_mandatory(fields.next(), delims)?,
             msh_13_sequence_number: Field::parse_optional(fields.next(), delims)?,
             msh_14_continuation_pointer: Field::parse_optional(fields.next(), delims)?,
             msh_15_accept_acknowledgment_type: Field::parse_optional(fields.next(), delims)?,
@@ -74,7 +74,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ensure_msh_fields_are_populated() -> Result<(), Hl7ParseError> {
+    fn ensure_msh_fields_are_populated() -> Result<(), Box<dyn std::error::Error>> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
         let delims = Separators::default();
 

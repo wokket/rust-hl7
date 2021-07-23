@@ -1,12 +1,9 @@
-#![feature(try_trait)] //apparently required for our From impl below
-
 pub mod fields;
 pub mod message;
 pub mod segments;
 pub mod separators;
 
 use failure::Fail;
-use std::option::NoneError;
 
 #[derive(Debug, Fail)]
 pub enum Hl7ParseError {
@@ -20,15 +17,16 @@ pub enum Hl7ParseError {
     Msh1Msh2 { error: String },
 
     #[fail(display = "Required value missing")]
-    MissingRequiredValue { error: NoneError },
+    MissingRequiredValue //{ /*error: NoneError*/ }, // remmed for #2 until NoneError gets more stable.
 }
 
+/*
 impl From<NoneError> for Hl7ParseError {
     fn from(error: NoneError) -> Self {
         // this would only be called if we `?` a `None` somewhere.
         Hl7ParseError::MissingRequiredValue { error }
     }
-}
+}*/
 
 // /// A repeat of a field is a set of 0 or more sub component values.
 // /// Currently all values are stored as their original string representations.  Methods to convert

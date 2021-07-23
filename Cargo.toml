@@ -11,6 +11,4 @@ name="rusthl7"
 path="src/lib.rs"
 
 [dependencies]
-#itertools = "0.8"
-#libc = "0.2"
 failure = "0.1"

@@ -7,8 +7,8 @@ use super::*;
 /// Message parses the source string into &str slices (minimising copying)
 #[derive(Debug, PartialEq)]
 pub struct Message<'a> {
-    source: &'a str,
-    segments: Vec<Segment<'a>>,
+    pub source: &'a str,
+    pub segments: Vec<Segment<'a>>,
 }
 
 impl<'a> Message<'a> {
@@ -23,7 +23,7 @@ impl<'a> Message<'a> {
             .collect();
 
         let msg = Message {
-            source: source,
+            source,
             segments: segments?,
         };
 

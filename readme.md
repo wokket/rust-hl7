@@ -1,6 +1,7 @@
 ## An experimental HL7 library ##
 
 [![CI Ubunutu](https://github.com/wokket/rust-hl7/actions/workflows/ci.yml/badge.svg)](https://github.com/wokket/rust-hl7/actions/workflows/ci.yml)
+[![Crates IO](https://img.shields.io/crates/v/rust-hl7.svg)](https://crates.io/crates/rust-hl7)
 
 Totally nothing like production ready!
 

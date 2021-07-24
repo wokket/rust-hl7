@@ -16,10 +16,13 @@ impl<'a> Field<'a> {
     }
 
     /// Used to hide the removal of NoneError for #2...  If passed `Some()` value it retursn a field with that value.  If passed `None() it returns an `Err(Hl7ParseError::MissingRequiredValue{})`
-    pub fn parse_mandatory(input: Option<&'a str>, delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
+    pub fn parse_mandatory(
+        input: Option<&'a str>,
+        delims: &Separators,
+    ) -> Result<Field<'a>, Hl7ParseError> {
         match input {
             Some(string_value) => Field::parse(string_value, delims),
-            None => Err(Hl7ParseError::MissingRequiredValue{})
+            None => Err(Hl7ParseError::MissingRequiredValue {}),
         }
     }
 
@@ -88,7 +91,7 @@ mod tests {
 
         match Field::parse_mandatory(Some("xxx"), &d) {
             Ok(field) => assert_eq!(field.value(), "xxx"),
-            _ => assert!(false)
+            _ => assert!(false),
         }
     }
 
@@ -98,7 +101,7 @@ mod tests {
 
         match Field::parse_mandatory(None, &d) {
             Err(Hl7ParseError::MissingRequiredValue()) => assert!(true),
-            _ => assert!(false)
+            _ => assert!(false),
         }
     }
 }

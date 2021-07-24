@@ -26,6 +26,7 @@ impl<'a> Message<'a> {
             source: source,
             segments: segments?,
         };
+
         Ok(msg)
     }
 }

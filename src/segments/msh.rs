@@ -38,7 +38,7 @@ pub struct MshSegment<'a> {
 impl<'a> MshSegment<'a> {
     pub fn parse(input: &'a str, delims: &Separators) -> Result<MshSegment<'a>, Hl7ParseError> {
         let mut fields = input.split(delims.field);
-    
+
         assert!(fields.next().unwrap() == "MSH");
 
         let _ = fields.next(); //consume the delimiter chars
@@ -82,16 +82,24 @@ mod tests {
 
         assert_eq!(msh.msh_1_field_separator, '|');
 
-        let msh3 = msh.msh_3_sending_application.ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
+        let msh3 = msh
+            .msh_3_sending_application
+            .ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
         assert_eq!(msh3.value(), "GHH LAB");
-        
-        let msh4 = msh.msh_4_sending_facility.ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
+
+        let msh4 = msh
+            .msh_4_sending_facility
+            .ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
         assert_eq!(msh4.value(), "ELAB-3");
 
-        let msh5 = msh.msh_5_receiving_application.ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
+        let msh5 = msh
+            .msh_5_receiving_application
+            .ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
         assert_eq!(msh5.value(), "GHH OE");
 
-        let msh6 = msh.msh_6_receiving_facility.ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
+        let msh6 = msh
+            .msh_6_receiving_facility
+            .ok_or(Hl7ParseError::Generic("Parse Error".to_string()))?;
         assert_eq!(msh6.value(), "BLDG4");
 
         assert_eq!(msh.msh_8_security, None); //blank field check

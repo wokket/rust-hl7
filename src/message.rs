@@ -29,6 +29,27 @@ impl<'a> Message<'a> {
 
         Ok(msg)
     }
+
+    /// Extracts header element to an owned object for external use
+    pub fn msh(&self) -> Result<msh::MshSegment, Hl7ParseError> {
+        let segment = self.segments.iter()
+            .find_map(|s| match s {
+                segments::Segment::MSH(x) => Some(x.clone().to_owned()),
+                _ => None,
+            })
+            .expect("Failed to find hl7 header");
+        Ok(segment)
+    }
+
+    /// Extracts all generic elements to owned objects for external use
+    pub fn generics(&self) -> Result<Vec<&generic::GenericSegment>, Hl7ParseError> {
+        let generics: Vec<&generic::GenericSegment> = self.segments.iter()
+            .filter_map(|s| match s {
+                segments::Segment::Generic(x) => Some(x),
+                _ => None,
+            }).map(|g| g.clone().to_owned()).collect();
+        Ok(generics)
+    }
 }
 
 #[cfg(test)]

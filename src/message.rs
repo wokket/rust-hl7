@@ -60,6 +60,16 @@ impl<'a> Message<'a> {
             .collect();
         Ok(found)
     }
+
+    /// Present input vectors of &generics to vectors of &str
+    pub fn segs_to_str_vecs(segments: Vec<&generic::GenericSegment<'a>>) -> Result<Vec<Vec<&'a str>>, Hl7ParseError> {
+        let vecs = segments.iter()
+            .map(|s| s.fields.iter()
+                .map(|f| f.value())
+                .collect())
+            .collect();
+        Ok(vecs)
+    }
 }
 
 #[cfg(test)]

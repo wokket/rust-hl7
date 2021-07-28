@@ -50,6 +50,16 @@ impl<'a> Message<'a> {
             }).map(|g| g.clone().to_owned()).collect();
         Ok(generics)
     }
+
+    /// Extracts generic elements to owned objects for external use by matching first field to name
+    pub fn segments_by_name(&self, name: &str) -> Result<Vec<&generic::GenericSegment>, Hl7ParseError> {
+        let generics = Message::generics(self).unwrap();
+        let found = generics.iter()
+            .filter(|&s| s.fields.first().unwrap().value() == name)
+            .map(|s| s.clone().to_owned())
+            .collect();
+        Ok(found)
+    }
 }
 
 #[cfg(test)]

@@ -92,6 +92,14 @@ impl<'a> Message<'a> {
     }
 }
 
+impl<'a> Clone for Message<'a> {
+    /// Creates a new Message object using a clone of the original's source
+    fn clone(&self) -> Self {
+        let msg = Message::from_str(self.source.clone()).unwrap();
+        msg
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,6 +149,19 @@ mod tests {
         let vval = vecs.first().unwrap().first().unwrap();
 
         assert_eq!(vval, &sval);
+        Ok(())
+    }
+    #[test]
+    fn ensure_clones_are_owned() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg = Message::from_str(hl7)?;
+        // Verify that we can clone and take ownership
+        let dolly = msg.clone();
+        let dolly = dolly.to_owned();
+        assert_eq!(
+            msg.msh().unwrap().msh_7_date_time_of_message,
+            dolly.msh().unwrap().msh_7_date_time_of_message
+        );
         Ok(())
     }
 }

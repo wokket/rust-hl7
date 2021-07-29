@@ -81,7 +81,7 @@ impl<'a> Message<'a> {
     }
 
     /// Present input vectors of &generics to vectors of &str
-    pub fn segs_to_str_vecs(
+    pub fn segments_to_str_vecs(
         segments: Vec<&generic::GenericSegment<'a>>,
     ) -> Result<Vec<Vec<&'a str>>, Hl7ParseError> {
         let vecs = segments
@@ -145,7 +145,7 @@ mod tests {
         let msg = Message::from_str(hl7)?;
         let segs = msg.generic_segments_by_name("OBR")?;
         let sval = segs.first().unwrap().fields.first().unwrap().value();
-        let vecs = Message::segs_to_str_vecs(segs).unwrap();
+        let vecs = Message::segments_to_str_vecs(segs).unwrap();
         let vval = vecs.first().unwrap().first().unwrap();
 
         assert_eq!(vval, &sval);

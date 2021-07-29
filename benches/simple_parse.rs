@@ -7,15 +7,17 @@ fn get_sample_message() -> String {
 
 fn message_parse(c: &mut Criterion) {
     let msg = &get_sample_message();
-    c.bench_function("oru parse", |b| b.iter(|| {
-        let m = Message::from_str(msg).unwrap();
-        let seg = m.segments.first();
+    c.bench_function("oru parse", |b| {
+        b.iter(|| {
+            let m = Message::from_str(msg).unwrap();
+            let seg = m.segments.first();
 
-        if let Some(Segment::MSH(msh)) = seg {
-            let _app = msh.msh_3_sending_application.unwrap();
-            //println!("{}", _app.value());
-        }
-    }));
+            if let Some(Segment::MSH(msh)) = seg {
+                let _app = msh.msh_3_sending_application.unwrap();
+                //println!("{}", _app.value());
+            }
+        })
+    });
 }
 
 criterion_group!(benches, message_parse);

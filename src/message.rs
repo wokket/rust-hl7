@@ -42,7 +42,7 @@ impl<'a> Message<'a> {
     }
 
     /// Extracts all generic elements to owned objects for external use
-    pub fn generics(&self) -> Result<Vec<&generic::GenericSegment>, Hl7ParseError> {
+    pub fn generic_segments(&self) -> Result<Vec<&generic::GenericSegment>, Hl7ParseError> {
         let generics: Vec<&generic::GenericSegment> = self.segments.iter()
             .filter_map(|s| match s {
                 segments::Segment::Generic(x) => Some(x),
@@ -52,12 +52,14 @@ impl<'a> Message<'a> {
     }
 
     /// Extracts generic elements to owned objects for external use by matching first field to name
-    pub fn segments_by_name(&self, name: &str) -> Result<Vec<&generic::GenericSegment>, Hl7ParseError> {
-        let generics = Message::generics(self).unwrap();
-        let found = generics.iter()
-            .filter(|&s| s.fields.first().unwrap().value() == name)
-            .map(|s| s.clone().to_owned())
-            .collect();
+    pub fn generic_segments_by_name(&self, name: &str) -> Result<Vec<&generic::GenericSegment>, Hl7ParseError> {
+        let found: Vec<&generic::GenericSegment> = self.segments.iter()
+            .filter_map(|s| match s {
+                segments::Segment::Generic(x) => {
+                    if x.fields.first().unwrap().value() == name { Some(x) } else { None }
+                },
+                _ => None,
+            }).map(|g| g.clone().to_owned()).collect();
         Ok(found)
     }
 

@@ -29,6 +29,75 @@ impl<'a> Message<'a> {
 
         Ok(msg)
     }
+
+    /// Extracts header element to an owned object for external use
+    pub fn msh(&self) -> Result<msh::MshSegment, Hl7ParseError> {
+        let segment = self
+            .segments
+            .iter()
+            .find_map(|s| match s {
+                segments::Segment::MSH(x) => Some(x.clone().to_owned()),
+                _ => None,
+            })
+            .expect("Failed to find hl7 header");
+        Ok(segment)
+    }
+
+    /// Extracts all generic elements to owned objects for external use
+    pub fn generic_segments(&self) -> Result<Vec<&generic::GenericSegment>, Hl7ParseError> {
+        let generics: Vec<&generic::GenericSegment> = self
+            .segments
+            .iter()
+            .filter_map(|s| match s {
+                segments::Segment::Generic(x) => Some(x),
+                _ => None,
+            })
+            .map(|g| g.clone().to_owned())
+            .collect();
+        Ok(generics)
+    }
+
+    /// Extracts generic elements to owned objects for external use by matching first field to name
+    pub fn generic_segments_by_name(
+        &self,
+        name: &str,
+    ) -> Result<Vec<&generic::GenericSegment>, Hl7ParseError> {
+        let found: Vec<&generic::GenericSegment> = self
+            .segments
+            .iter()
+            .filter_map(|s| match s {
+                segments::Segment::Generic(x) => {
+                    if x.fields.first().unwrap().value() == name {
+                        Some(x)
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            })
+            .map(|g| g.clone().to_owned())
+            .collect();
+        Ok(found)
+    }
+
+    /// Present input vectors of &generics to vectors of &str
+    pub fn segs_to_str_vecs(
+        segments: Vec<&generic::GenericSegment<'a>>,
+    ) -> Result<Vec<Vec<&'a str>>, Hl7ParseError> {
+        let vecs = segments
+            .iter()
+            .map(|s| s.fields.iter().map(|f| f.value()).collect())
+            .collect();
+        Ok(vecs)
+    }
+}
+
+impl<'a> Clone for Message<'a> {
+    /// Creates a new Message object using a clone of the original's source
+    fn clone(&self) -> Self {
+        let msg = Message::from_str(self.source.clone()).unwrap();
+        msg
+    }
 }
 
 #[cfg(test)]
@@ -41,6 +110,58 @@ mod tests {
         let msg = Message::from_str(hl7)?;
 
         assert_eq!(msg.segments.len(), 2);
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_generic_segments_are_returned() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg = Message::from_str(hl7)?;
+
+        assert_eq!(msg.generic_segments().unwrap().len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_generic_segments_are_found() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg = Message::from_str(hl7)?;
+
+        assert_eq!(msg.generic_segments_by_name("OBR").unwrap().len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_msh_is_returned() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg = Message::from_str(hl7)?;
+
+        assert_eq!(msg.msh().unwrap().msh_1_field_separator, '|');
+        Ok(())
+    }
+    #[test]
+    fn ensure_segments_convert_to_vectors() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg = Message::from_str(hl7)?;
+        let segs = msg.generic_segments_by_name("OBR")?;
+        let sval = segs.first().unwrap().fields.first().unwrap().value();
+        let vecs = Message::segs_to_str_vecs(segs).unwrap();
+        let vval = vecs.first().unwrap().first().unwrap();
+
+        assert_eq!(vval, &sval);
+        Ok(())
+    }
+    #[test]
+    fn ensure_clones_are_owned() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg = Message::from_str(hl7)?;
+        // Verify that we can clone and take ownership
+        let dolly = msg.clone();
+        let dolly = dolly.to_owned();
+        assert_eq!(
+            msg.msh().unwrap().msh_7_date_time_of_message,
+            dolly.msh().unwrap().msh_7_date_time_of_message
+        );
         Ok(())
     }
 }

@@ -86,4 +86,31 @@ mod tests {
         assert_eq!(msg.segments.len(), 2);
         Ok(())
     }
+
+    #[test]
+    fn ensure_generic_segments_are_returned() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg = Message::from_str(hl7)?;
+
+        assert_eq!(msg.generic_segments().unwrap().len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_generic_segments_are_found() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg = Message::from_str(hl7)?;
+
+        assert_eq!(msg.generic_segments_by_name("OBR").unwrap().len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_msh_is_returned() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg = Message::from_str(hl7)?;
+
+        assert_eq!(msg.msh().unwrap().msh_1_field_separator, '|');
+        Ok(())
+    }
 }

@@ -1,21 +1,32 @@
 use super::separators::Separators;
 use super::*;
+use std::ops::Index;
 
 /// Represents a single field inside the HL7.  Note that fields can include repeats, components and sub-components.
 /// See [the spec](http://www.hl7.eu/HL7v2x/v251/std251/ch02.html#Heading13) for more info
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq)]
 
 pub struct Field<'a> {
     pub source: &'a str,
-    pub delims: (char, char),
+    pub delims: Separators,
+    pub components: Vec<&'a str>,
+    pub subcomponents: Vec<Vec<&'a str>>
+
 }
 
 impl<'a> Field<'a> {
     /// Convert the given line of text into a field.
     pub fn parse(input: &'a str, delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
+        let components = input.split(delims.component).collect::<Vec<&'a str>>();
+        let subcomponents = components
+            .iter()
+            .map(|c| c.split(delims.subcomponent).collect::<Vec<&'a str>>())
+            .collect();
         let field = Field {
             source: &input,
-            delims: (delims.component, delims.subcomponent)
+            delims: *delims,
+            components,
+            subcomponents
         };
         Ok(field)
     }
@@ -59,20 +70,30 @@ impl<'a> Field<'a> {
     pub fn as_str(&self) -> &'a str {
         self.source
     }
+}
 
-    /// Method to get the underlying components of the value in this field.
-    pub fn components(&self) -> Vec<&'a str> {
-        self.source.split(self.delims.0).collect()
+impl<'a> Clone for Field<'a> {
+    /// Creates a new Message object using a clone of the original's source
+    fn clone(&self) -> Self {
+        Field::parse(self.source.clone(), &self.delims.clone()).unwrap()
     }
+}
 
-    /// Method to get the subcomponents from the value in this field.
-    pub fn subcomponents(&self) -> Vec<Vec<&'a str>> {
-        let components = self.source
-            .split(self.delims.0).collect::<Vec<&'a str>>();
-        components
-            .iter()
-            .map(|sc| sc.split(self.delims.1).collect::<Vec<&'a str>>())
-            .collect()
+/// Access string reference of a Field component by index
+/// Adjust the index by one as medical peope do not count from zero
+impl<'a> Index<usize> for Field<'a> {
+    type Output = &'a str;
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.components[idx - 1]
+    }
+}
+
+/// Access string reference of a Field subcomponent by index
+/// Adjust the index by one as medical peope do not count from zero
+impl<'a> Index<(usize,usize)> for Field<'a> {
+    type Output = &'a str;
+    fn index(&self, idx: (usize,usize)) -> &Self::Output {
+        &self.subcomponents[idx.0 - 1][idx.1 - 1]
     }
 }
 
@@ -137,14 +158,14 @@ mod tests {
     fn test_parse_components() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy"), &d).unwrap();
-        assert_eq!(f.components().len(), 2)
+        assert_eq!(f.components.len(), 2)
     }
 
     #[test]
     fn test_parse_subcomponents() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
-        assert_eq!(f.subcomponents()[1].len(), 2)
+        assert_eq!(f.subcomponents[1].len(), 2)
     }
 
     #[test]

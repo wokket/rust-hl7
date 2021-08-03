@@ -1,6 +1,8 @@
 use super::segments::*;
 use super::separators::Separators;
 use super::*;
+use std::ops::Index;
+use std::collections::VecDeque;
 
 /// A Message is an entire HL7 message parsed into it's constituent segments, fields, repeats and subcomponents,
 /// and it consists of (1 or more) Segments.
@@ -43,7 +45,7 @@ impl<'a> Message<'a> {
         Ok(segment)
     }
 
-    /// Extracts all generic elements to owned objects for external use
+    /// Extracts all generic elements for external use
     pub fn generic_segments(&self) -> Result<Vec<&generic::GenericSegment>, Hl7ParseError> {
         let generics: Vec<&generic::GenericSegment> = self
             .segments
@@ -52,12 +54,11 @@ impl<'a> Message<'a> {
                 segments::Segment::Generic(x) => Some(x),
                 _ => None,
             })
-            .map(|g| g.clone().to_owned())
             .collect();
         Ok(generics)
     }
 
-    /// Extracts generic elements to owned objects for external use by matching first field to name
+    /// Extracts generic elements for external use by matching first field to name
     pub fn generic_segments_by_name(
         &self,
         name: &str,
@@ -75,7 +76,6 @@ impl<'a> Message<'a> {
                 }
                 _ => None,
             })
-            .map(|g| g.clone().to_owned())
             .collect();
         Ok(found)
     }
@@ -86,7 +86,12 @@ impl<'a> Message<'a> {
     ) -> Result<Vec<Vec<&'a str>>, Hl7ParseError> {
         let vecs = segments
             .iter()
-            .map(|s| s.fields.iter().map(|f| f.value()).collect())
+            .map(|s|
+                s.fields
+                    .iter()
+                    .map(|f| f.value())
+                    .collect()
+            )
             .collect();
         Ok(vecs)
     }
@@ -107,6 +112,76 @@ impl<'a> Clone for Message<'a> {
     fn clone(&self) -> Self {
         let msg = Message::from_str(self.source.clone()).unwrap();
         msg
+    }
+}
+
+impl<'a> Index<usize> for Message<'a> {
+    // type Output = Segment<'a>;
+    type Output = &'a str;
+
+    /// Handle indexing into a Message a la PV1.F2.R1.C1
+    fn index(&self, idx: usize) -> &Self::Output {
+        let seg = &self.segments[idx];
+        // Return the appropriate source reference
+        match seg {
+            // Short circuit for now
+            Segment::MSH(m) => &m.source,
+            // Parse out slice depth
+            Segment::Generic(g) => &g.source
+        }
+    }
+}
+
+impl<'a> Index<String> for Message<'a> {
+    // type Output = Segment<'a>;
+    type Output = &'a str;
+
+    /// Handle indexing into a Message a la PV1.F2.R1.C1
+    fn index(&self, idx: String) -> &Self::Output {
+        // Parse index elements
+        let mut slices: VecDeque<&str> = idx.split(".").collect();
+        let seg_name = slices.pop_front().expect("Missing index field name");
+        // Convert string index values to usize - field, component, subcomponent
+        let mut indices = Vec::<usize>::new();
+        while let Some(i) = slices.pop_front() {
+            let fi: usize = i[1..].parse().unwrap();
+            indices.push(fi);
+        };
+        // Find our first segment without offending the borow checker
+        let seg_index = self.segments.iter().position(
+            |r| &r.as_str()[..seg_name.len()] == seg_name
+        ).unwrap();
+        let seg = &self.segments[seg_index];
+        // Return the appropriate source reference
+        match seg {
+            // Short circuit for now
+            Segment::MSH(m) => &m.source,
+            // Parse out slice depth
+            Segment::Generic(g) => match indices.len() {
+                // Extract subcomponent
+                3 => {
+                    let sc_id = indices.pop().unwrap();
+                    let c_id = indices.pop().unwrap();
+                    let f_id = indices.pop().unwrap();
+                    &g.fields[f_id][(c_id,sc_id)]
+                },
+                // Extract component
+                2 => {
+                    let c_id = indices.pop().unwrap();
+                    let f_id = indices.pop().unwrap();
+                    &g.fields[f_id][c_id]
+                },
+                // Extract field
+                1 => {
+                    let f_id = indices.pop().unwrap();
+                    &g[f_id]
+                },
+                // If we are here, something went wrong
+                _ => {
+                    &g.source
+                }
+            }
+        }
     }
 }
 
@@ -180,6 +255,14 @@ mod tests {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
         let msg = Message::from_str(hl7)?;
         assert_eq!(msg.to_string(),String::from(hl7));
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_index() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
+        let msg = Message::from_str(hl7)?;
+        assert_eq!(msg[String::from("OBR.F1.R1.C1")],"segment");
         Ok(())
     }
 }

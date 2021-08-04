@@ -53,6 +53,13 @@ impl Separators {
             subcomponent: chars.next().unwrap().1,
         })
     }
+
+    pub fn to_string(&self) -> String {
+        String::from(self.component) +
+        &String::from(self.repeat) +
+        &String::from(self.escape_char) +
+        &String::from(self.subcomponent)
+    }
 }
 
 /// Expects to receive a full message (or at least a MSH segment) in order to parse
@@ -105,5 +112,10 @@ mod tests {
         //note the missing M
         let result = Separators::new("SH|^~\\&|CATH|StJohn|AcmeHIS|StJohn|20061019172719||ACK^O01|MSGID12349876|P|2.3\rMSA|AA|MSGID12349876");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn ensure_separators_to_string() {
+        assert_eq!("^~\\&",Separators::default().to_string());
     }
 }

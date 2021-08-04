@@ -66,6 +66,13 @@ impl<'a> Field<'a> {
             }
         }
     }
+
+    /// Extract field value to owned String
+    pub fn to_string(&self) -> String {
+        match self {
+            Field::Generic(s) => s.clone().to_owned()
+        }
+    }
 }
 
 #[cfg(test)]
@@ -137,5 +144,12 @@ mod tests {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
         assert_eq!(f.subcomponents(&d)[1].len(), 2)
+    }
+
+    #[test]
+    fn test_to_string() {
+        let d = Separators::default();
+        let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
+        assert_eq!(f.to_string(), String::from("xxx^yyy&zzz"))
     }
 }

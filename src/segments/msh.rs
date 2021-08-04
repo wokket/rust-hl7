@@ -67,6 +67,66 @@ impl<'a> MshSegment<'a> {
 
         Ok(msh)
     }
+
+    /// Extract header segment to new String
+    pub fn to_string(&self) -> String {
+        let d = &String::from(self.msh_2_encoding_characters.field);
+        String::from("MSH") + d +
+        &self.msh_2_encoding_characters.to_string() + d +
+        match self.msh_3_sending_application {
+            None => "",
+            Some(Field::Generic(x)) => x
+        } + d +
+        match self.msh_4_sending_facility {
+            None => "",
+            Some(Field::Generic(x)) => x
+        } + d +
+        match self.msh_5_receiving_application {
+            None => "",
+            Some(Field::Generic(x)) => x
+        } + d +
+        match self.msh_6_receiving_facility {
+            None => "",
+            Some(Field::Generic(x)) => x
+        } + d +
+        self.msh_7_date_time_of_message.value() + d +
+        match self.msh_8_security {
+            None => "",
+            Some(Field::Generic(x)) => x
+        } + d +
+        self.msh_9_message_type.value() + d +
+        self.msh_10_message_control_id.value() + d +
+        self.msh_11_processing_id.value() + d +
+        self.msh_12_version_id.value() + d +
+        match self.msh_13_sequence_number {
+            None => "",
+            Some(Field::Generic(x)) => x
+        } + d +
+        match self.msh_14_continuation_pointer {
+            None => "",
+            Some(Field::Generic(x)) => x
+        } + d +
+        match self.msh_15_accept_acknowledgment_type {
+            None => "",
+            Some(Field::Generic(x)) => x
+        } + d +
+        match self.msh_16_application_acknowledgment_type {
+            None => "",
+            Some(Field::Generic(x)) => x
+        } + d +
+        match self.msh_17_country_code {
+            None => "",
+            Some(Field::Generic(x)) => x
+        } + d +
+        match self.msh_18_character_set {
+            None => "",
+            Some(Field::Generic(x)) => x
+        } + d +
+        match self.msh_19_principal_language_of_message {
+            None => "",
+            Some(Field::Generic(x)) => x
+        }
+    }
 }
 
 #[cfg(test)]
@@ -104,6 +164,16 @@ mod tests {
 
         assert_eq!(msh.msh_8_security, None); //blank field check
         assert_eq!(msh.msh_12_version_id.value(), "2.4"); //we got to the end ok
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_msh_to_string() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
+        let delims = Separators::default();
+        let msh = MshSegment::parse(hl7, &delims)?;
+        let clone = msh.to_string();
+        assert_eq!(hl7,&clone[..hl7.len()]);
         Ok(())
     }
 }

@@ -90,6 +90,11 @@ impl<'a> Message<'a> {
             .collect();
         Ok(vecs)
     }
+
+    /// Export source to owned String
+    pub fn to_string(&self) -> String {
+        self.source.clone().to_owned()
+    }
 }
 
 impl<'a> Clone for Message<'a> {
@@ -162,6 +167,14 @@ mod tests {
             msg.msh().unwrap().msh_7_date_time_of_message,
             dolly.msh().unwrap().msh_7_date_time_of_message
         );
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_to_string() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg = Message::from_str(hl7)?;
+        assert_eq!(msg.to_string(),String::from(hl7));
         Ok(())
     }
 }

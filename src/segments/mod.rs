@@ -31,6 +31,13 @@ impl<'a> Segment<'a> {
 
         Ok(seg)
     }
+
+    pub fn to_string(&self, delims: &Separators) -> String {
+        match self {
+            Segment::MSH(m) => m.to_string(),
+            Segment::Generic(g) => g.to_string(delims)
+        }
+    }
 }
 
 #[cfg(test)]

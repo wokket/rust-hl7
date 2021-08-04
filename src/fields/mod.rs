@@ -46,6 +46,26 @@ impl<'a> Field<'a> {
             Field::Generic(s) => s,
         }
     }
+
+    /// Method to get the underlying components of the value in this field.
+    pub fn components(&self, delims: &Separators) -> Vec<&'a str> {
+        match self {
+            Field::Generic(s) => s.split(delims.component).collect(),
+        }
+    }
+
+    /// Method to get the subcomponents from the value in this field.
+    pub fn subcomponents(&self, delims: &Separators) -> Vec<Vec<&'a str>> {
+        match self {
+            Field::Generic(s) => {
+                let components = s.split(delims.component).collect::<Vec<&'a str>>();
+                components
+                    .iter()
+                    .map(|sc| sc.split(delims.subcomponent).collect::<Vec<&'a str>>())
+                    .collect()
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -103,5 +123,19 @@ mod tests {
             Err(Hl7ParseError::MissingRequiredValue()) => assert!(true),
             _ => assert!(false),
         }
+    }
+
+    #[test]
+    fn test_parse_components() {
+        let d = Separators::default();
+        let f = Field::parse_mandatory(Some("xxx^yyy"), &d).unwrap();
+        assert_eq!(f.components(&d).len(), 2)
+    }
+
+    #[test]
+    fn test_parse_subcomponents() {
+        let d = Separators::default();
+        let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
+        assert_eq!(f.subcomponents(&d)[1].len(), 2)
     }
 }

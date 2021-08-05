@@ -262,7 +262,7 @@ mod tests {
     fn ensure_index() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
         let msg = Message::from_str(hl7)?;
-        assert_eq!(msg[String::from("OBR.F1.R1.C1")],"segment");
+        assert_eq!(msg[String::from("OBR.F1.R2.C1")],"sub");
         Ok(())
     }
 }

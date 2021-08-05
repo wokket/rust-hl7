@@ -111,10 +111,9 @@ impl<'a> Clone for Message<'a> {
 }
 
 impl<'a> Index<usize> for Message<'a> {
-    // type Output = Segment<'a>;
     type Output = &'a str;
 
-    /// Handle indexing into a Message a la PV1.F2.R1.C1
+    /// Access Segment string reference by numeric index
     fn index(&self, idx: usize) -> &Self::Output {
         let seg = &self.segments[idx];
         // Return the appropriate source reference
@@ -128,20 +127,13 @@ impl<'a> Index<usize> for Message<'a> {
 }
 
 impl<'a> Index<String> for Message<'a> {
-    // type Output = Segment<'a>;
     type Output = &'a str;
 
-    /// Handle indexing into a Message a la PV1.F2.R1.C1
+    /// Access Segment, Field, or sub-field string references by string index
     fn index(&self, idx: String) -> &Self::Output {
         // Parse index elements
-        let mut slices: VecDeque<&str> = idx.split(".").collect();
-        let seg_name = slices.pop_front().expect("Missing index field name");
-        // Convert string index values to usize - field, component, subcomponent
-        let mut indices = Vec::<usize>::new();
-        while let Some(i) = slices.pop_front() {
-            let fi: usize = i[1..].parse().unwrap();
-            indices.push(fi);
-        }
+        let mut indices: Vec<&str> = idx.split(".").collect();
+        let seg_name = indices[0];
         // Find our first segment without offending the borow checker
         let seg_index = self
             .segments
@@ -154,28 +146,7 @@ impl<'a> Index<String> for Message<'a> {
             // Short circuit for now
             Segment::MSH(m) => &m.source,
             // Parse out slice depth
-            Segment::Generic(g) => match indices.len() {
-                // Extract subcomponent
-                3 => {
-                    let sc_id = indices.pop().unwrap();
-                    let c_id = indices.pop().unwrap();
-                    let f_id = indices.pop().unwrap();
-                    &g.fields[f_id][(c_id, sc_id)]
-                }
-                // Extract component
-                2 => {
-                    let c_id = indices.pop().unwrap();
-                    let f_id = indices.pop().unwrap();
-                    &g.fields[f_id][c_id]
-                }
-                // Extract field
-                1 => {
-                    let f_id = indices.pop().unwrap();
-                    &g[f_id]
-                }
-                // If we are here, something went wrong
-                _ => &g.source,
-            },
+            Segment::Generic(g) => &g[indices[1..].join(".")]
         }
     }
 }

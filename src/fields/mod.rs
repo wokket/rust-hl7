@@ -77,21 +77,47 @@ impl<'a> Clone for Field<'a> {
     }
 }
 
-/// Access string reference of a Field component by index
-/// Adjust the index by one as medical people do not count from zero
+/// Access string reference of a Field component by numeric index
 impl<'a> Index<usize> for Field<'a> {
     type Output = &'a str;
     fn index(&self, idx: usize) -> &Self::Output {
-        &self.components[idx - 1]
+        &self.components[idx]
     }
 }
 
-/// Access string reference of a Field subcomponent by index
-/// Adjust the index by one as medical people do not count from zero
+/// Access string reference of a Field subcomponent by numeric index
 impl<'a> Index<(usize, usize)> for Field<'a> {
     type Output = &'a str;
     fn index(&self, idx: (usize, usize)) -> &Self::Output {
-        &self.subcomponents[idx.0 - 1][idx.1 - 1]
+        &self.subcomponents[idx.0][idx.1]
+    }
+}
+
+/// Access string reference of a Field component by String index
+/// Adjust the index by one as medical people do not count from zero
+impl<'a> Index<String> for Field<'a> {
+    type Output = &'a str;
+    fn index(&self, sidx: String) -> &Self::Output {
+        let parts = sidx.split('.').collect::<Vec<&str>>();
+        if parts.len() == 1 {
+            let stringnums = parts[0].chars()
+                .filter(|c| c.is_digit(10))
+                .collect::<String>();
+            let idx: usize = stringnums.parse().unwrap();
+            return &self[idx - 1]
+        } else if parts.len() == 2 {
+            let stringnums = parts[0].chars()
+                .filter(|c| c.is_digit(10))
+                .collect::<String>();
+            let idx0: usize = stringnums.parse().unwrap();
+            let stringnums = parts[1].chars()
+                .filter(|c| c.is_digit(10))
+                .collect::<String>();
+            let idx1: usize = stringnums.parse().unwrap();
+            &self[(idx0 - 1,idx1 - 1)]
+        } else {
+            &""
+        }
     }
 }
 
@@ -181,10 +207,20 @@ mod tests {
     }
 
     #[test]
-    fn test_index() {
+    fn test_uint_index() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
-        assert_eq!(f[2], "yyy&zzz");
-        assert_eq!(f[(2, 2)], "zzz");
+        assert_eq!(f[1], "yyy&zzz");
+        assert_eq!(f[(1, 1)], "zzz");
+    }
+
+    #[test]
+    fn test_string_index() {
+        let d = Separators::default();
+        let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
+        let idx0 = String::from("R2");
+        let idx1 = String::from("R2.C2");
+        assert_eq!(f[idx0.clone()], "yyy&zzz");
+        assert_eq!(f[idx1], "zzz");
     }
 }

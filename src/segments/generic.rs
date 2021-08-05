@@ -44,6 +44,29 @@ impl<'a> Index<(usize, usize, usize)> for GenericSegment<'a> {
         &self.fields[fidx.0][(fidx.1, fidx.2)]
     }
 }
+impl<'a> Index<String> for GenericSegment<'a> {
+    type Output = &'a str;
+    /// Access Field as string reference
+    fn index(&self, fidx: String) -> &Self::Output {
+        let sections = fidx.split(".").collect::<Vec<&str>>();
+        match sections.len() {
+            1 => {
+                let stringnum = sections[0].chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnum.parse().unwrap();
+                &self[idx]
+            },
+            _ => {
+                let stringnum = sections[0].chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnum.parse().unwrap();
+                &self.fields[idx][sections[1..].join(".")]
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -51,11 +74,28 @@ mod tests {
     use super::super::*;
 
     #[test]
-    fn ensure_index() {
+    fn ensure_numeric_index() {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
         let msg = Message::from_str(hl7).unwrap();
         let (f, c, s) = match &msg.segments[1] {
-            Segment::Generic(x) => (x[1], x[(1, 2)], x[(1, 2, 1)]),
+            Segment::Generic(x) => (x[1], x[(1, 1)], x[(1, 1, 0)]),
+            _ => ("", "", ""),
+        };
+        assert_eq!(f, "segment^sub&segment");
+        assert_eq!(c, "sub&segment");
+        assert_eq!(s, "sub");
+    }
+
+    #[test]
+    fn ensure_string_index() {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
+        let msg = Message::from_str(hl7).unwrap();
+        let (f, c, s) = match &msg.segments[1] {
+            Segment::Generic(x) => (
+                x[String::from("F1")], 
+                x[String::from("F1.R2")], 
+                x[String::from("F1.R2.C1")]
+            ),
             _ => ("", "", ""),
         };
         assert_eq!(f, "segment^sub&segment");

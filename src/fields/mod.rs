@@ -4,15 +4,20 @@ use super::*;
 /// Represents a single field inside the HL7.  Note that fields can include repeats, components and sub-components.
 /// See [the spec](http://www.hl7.eu/HL7v2x/v251/std251/ch02.html#Heading13) for more info
 #[derive(Debug, PartialEq, Clone, Copy)]
-pub enum Field<'a> {
-    Generic(&'a str),
+
+pub struct Field<'a> {
+    pub source: &'a str,
+    pub delims: (char, char),
 }
 
 impl<'a> Field<'a> {
     /// Convert the given line of text into a field.
-    pub fn parse(input: &'a str, _delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
-        // TODO: Match on component delim and return one of two Field variants (Generic or Componentised??)... names are hard
-        Ok(Field::Generic(input))
+    pub fn parse(input: &'a str, delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
+        let field = Field {
+            source: &input,
+            delims: (delims.component, delims.subcomponent)
+        };
+        Ok(field)
     }
 
     /// Used to hide the removal of NoneError for #2...  If passed `Some()` value it retursn a field with that value.  If passed `None() it returns an `Err(Hl7ParseError::MissingRequiredValue{})`
@@ -42,39 +47,32 @@ impl<'a> Field<'a> {
     /// Method to get the underlying value of this field.
     /// If this is a GenericField this method does not allocate.
     pub fn value(&self) -> &'a str {
-        match self {
-            Field::Generic(s) => s,
-        }
+        self.source
     }
 
     /// Export valus to owned String
     pub fn to_string(&self) -> String {
-        self.value().clone().to_owned()
+        self.source.clone().to_owned()
     }
 
     /// Export valus to str
     pub fn as_str(&self) -> &'a str {
-        self.value()
+        self.source
     }
 
     /// Method to get the underlying components of the value in this field.
-    pub fn components(&self, delims: &Separators) -> Vec<&'a str> {
-        match self {
-            Field::Generic(s) => s.split(delims.component).collect(),
-        }
+    pub fn components(&self) -> Vec<&'a str> {
+        self.source.split(self.delims.0).collect()
     }
 
     /// Method to get the subcomponents from the value in this field.
-    pub fn subcomponents(&self, delims: &Separators) -> Vec<Vec<&'a str>> {
-        match self {
-            Field::Generic(s) => {
-                let components = s.split(delims.component).collect::<Vec<&'a str>>();
-                components
-                    .iter()
-                    .map(|sc| sc.split(delims.subcomponent).collect::<Vec<&'a str>>())
-                    .collect()
-            }
-        }
+    pub fn subcomponents(&self) -> Vec<Vec<&'a str>> {
+        let components = self.source
+            .split(self.delims.0).collect::<Vec<&'a str>>();
+        components
+            .iter()
+            .map(|sc| sc.split(self.delims.1).collect::<Vec<&'a str>>())
+            .collect()
     }
 }
 
@@ -139,14 +137,14 @@ mod tests {
     fn test_parse_components() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy"), &d).unwrap();
-        assert_eq!(f.components(&d).len(), 2)
+        assert_eq!(f.components().len(), 2)
     }
 
     #[test]
     fn test_parse_subcomponents() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
-        assert_eq!(f.subcomponents(&d)[1].len(), 2)
+        assert_eq!(f.subcomponents()[1].len(), 2)
     }
 
     #[test]

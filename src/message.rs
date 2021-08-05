@@ -1,8 +1,8 @@
 use super::segments::*;
 use super::separators::Separators;
 use super::*;
-use std::ops::Index;
 use std::collections::VecDeque;
+use std::ops::Index;
 
 /// A Message is an entire HL7 message parsed into it's constituent segments, fields, repeats and subcomponents,
 /// and it consists of (1 or more) Segments.
@@ -86,12 +86,7 @@ impl<'a> Message<'a> {
     ) -> Result<Vec<Vec<&'a str>>, Hl7ParseError> {
         let vecs = segments
             .iter()
-            .map(|s|
-                s.fields
-                    .iter()
-                    .map(|f| f.value())
-                    .collect()
-            )
+            .map(|s| s.fields.iter().map(|f| f.value()).collect())
             .collect();
         Ok(vecs)
     }
@@ -127,7 +122,7 @@ impl<'a> Index<usize> for Message<'a> {
             // Short circuit for now
             Segment::MSH(m) => &m.source,
             // Parse out slice depth
-            Segment::Generic(g) => &g.source
+            Segment::Generic(g) => &g.source,
         }
     }
 }
@@ -146,11 +141,13 @@ impl<'a> Index<String> for Message<'a> {
         while let Some(i) = slices.pop_front() {
             let fi: usize = i[1..].parse().unwrap();
             indices.push(fi);
-        };
+        }
         // Find our first segment without offending the borow checker
-        let seg_index = self.segments.iter().position(
-            |r| &r.as_str()[..seg_name.len()] == seg_name
-        ).unwrap();
+        let seg_index = self
+            .segments
+            .iter()
+            .position(|r| &r.as_str()[..seg_name.len()] == seg_name)
+            .unwrap();
         let seg = &self.segments[seg_index];
         // Return the appropriate source reference
         match seg {
@@ -163,24 +160,22 @@ impl<'a> Index<String> for Message<'a> {
                     let sc_id = indices.pop().unwrap();
                     let c_id = indices.pop().unwrap();
                     let f_id = indices.pop().unwrap();
-                    &g.fields[f_id][(c_id,sc_id)]
-                },
+                    &g.fields[f_id][(c_id, sc_id)]
+                }
                 // Extract component
                 2 => {
                     let c_id = indices.pop().unwrap();
                     let f_id = indices.pop().unwrap();
                     &g.fields[f_id][c_id]
-                },
+                }
                 // Extract field
                 1 => {
                     let f_id = indices.pop().unwrap();
                     &g[f_id]
-                },
-                // If we are here, something went wrong
-                _ => {
-                    &g.source
                 }
-            }
+                // If we are here, something went wrong
+                _ => &g.source,
+            },
         }
     }
 }
@@ -254,7 +249,7 @@ mod tests {
     fn ensure_to_string() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
         let msg = Message::from_str(hl7)?;
-        assert_eq!(msg.to_string(),String::from(hl7));
+        assert_eq!(msg.to_string(), String::from(hl7));
         Ok(())
     }
 
@@ -262,7 +257,7 @@ mod tests {
     fn ensure_index() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
         let msg = Message::from_str(hl7)?;
-        assert_eq!(msg[String::from("OBR.F1.R2.C1")],"sub");
+        assert_eq!(msg[String::from("OBR.F1.R2.C1")], "sub");
         Ok(())
     }
 }

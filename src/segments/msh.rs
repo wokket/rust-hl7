@@ -82,12 +82,17 @@ impl<'a> MshSegment<'a> {
     /// Present MSH data in Generic segment
     pub fn as_generic(&self) -> GenericSegment<'a> {
         let delims = self.msh_2_encoding_characters;
-        let fields: Vec<Field<'a>> = self.source
+        let fields: Vec<Field<'a>> = self
+            .source
             .split(delims.field)
             .map(|line| Field::parse(line, &delims).unwrap())
             .collect();
 
-        GenericSegment { source: self.source, delim: delims.field, fields }
+        GenericSegment {
+            source: self.source,
+            delim: delims.field,
+            fields,
+        }
     }
 }
 

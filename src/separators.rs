@@ -55,10 +55,10 @@ impl Separators {
     }
 
     pub fn to_string(&self) -> String {
-        String::from(self.component) +
-        &String::from(self.repeat) +
-        &String::from(self.escape_char) +
-        &String::from(self.subcomponent)
+        String::from(self.component)
+            + &String::from(self.repeat)
+            + &String::from(self.escape_char)
+            + &String::from(self.subcomponent)
     }
 }
 
@@ -116,6 +116,6 @@ mod tests {
 
     #[test]
     fn ensure_separators_to_string() {
-        assert_eq!("^~\\&",Separators::default().to_string());
+        assert_eq!("^~\\&", Separators::default().to_string());
     }
 }

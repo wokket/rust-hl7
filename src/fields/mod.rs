@@ -10,8 +10,7 @@ pub struct Field<'a> {
     pub source: &'a str,
     pub delims: Separators,
     pub components: Vec<&'a str>,
-    pub subcomponents: Vec<Vec<&'a str>>
-
+    pub subcomponents: Vec<Vec<&'a str>>,
 }
 
 impl<'a> Field<'a> {
@@ -26,7 +25,7 @@ impl<'a> Field<'a> {
             source: &input,
             delims: *delims,
             components,
-            subcomponents
+            subcomponents,
         };
         Ok(field)
     }
@@ -55,18 +54,17 @@ impl<'a> Field<'a> {
         }
     }
 
-    /// Method to get the underlying value of this field.
-    /// If this is a GenericField this method does not allocate.
+    /// Compatibility method to get the underlying value of this field.
     pub fn value(&self) -> &'a str {
         self.source
     }
 
-    /// Export valus to owned String
+    /// Export value to owned String
     pub fn to_string(&self) -> String {
         self.source.clone().to_owned()
     }
 
-    /// Export valus to str
+    /// Export value to str
     pub fn as_str(&self) -> &'a str {
         self.source
     }
@@ -75,12 +73,12 @@ impl<'a> Field<'a> {
 impl<'a> Clone for Field<'a> {
     /// Creates a new Message object using a clone of the original's source
     fn clone(&self) -> Self {
-        Field::parse(self.source.clone(), &self.delims.clone()).unwrap()
+        Field::parse(self.source, &self.delims.clone()).unwrap()
     }
 }
 
 /// Access string reference of a Field component by index
-/// Adjust the index by one as medical peope do not count from zero
+/// Adjust the index by one as medical people do not count from zero
 impl<'a> Index<usize> for Field<'a> {
     type Output = &'a str;
     fn index(&self, idx: usize) -> &Self::Output {
@@ -89,10 +87,10 @@ impl<'a> Index<usize> for Field<'a> {
 }
 
 /// Access string reference of a Field subcomponent by index
-/// Adjust the index by one as medical peope do not count from zero
-impl<'a> Index<(usize,usize)> for Field<'a> {
+/// Adjust the index by one as medical people do not count from zero
+impl<'a> Index<(usize, usize)> for Field<'a> {
     type Output = &'a str;
-    fn index(&self, idx: (usize,usize)) -> &Self::Output {
+    fn index(&self, idx: (usize, usize)) -> &Self::Output {
         &self.subcomponents[idx.0 - 1][idx.1 - 1]
     }
 }
@@ -173,5 +171,20 @@ mod tests {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
         assert_eq!(f.to_string(), String::from("xxx^yyy&zzz"))
+    }
+
+    #[test]
+    fn test_clone() {
+        let d = Separators::default();
+        let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
+        assert_eq!(f.to_string(), f.clone().as_str())
+    }
+
+    #[test]
+    fn test_index() {
+        let d = Separators::default();
+        let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
+        assert_eq!(f[2], "yyy&zzz");
+        assert_eq!(f[(2, 2)], "zzz");
     }
 }

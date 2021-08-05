@@ -26,7 +26,11 @@ impl<'a> Segment<'a> {
 
         let seg = match fields[0].value() {
             "MSH" => Segment::MSH(MshSegment::parse(&input, delims)?),
-            _ => Segment::Generic(GenericSegment {source: &input, delim: delims.field, fields }),
+            _ => Segment::Generic(GenericSegment {
+                source: &input,
+                delim: delims.field,
+                fields,
+            }),
         };
 
         Ok(seg)
@@ -36,7 +40,7 @@ impl<'a> Segment<'a> {
     pub fn to_string(&self) -> String {
         match self {
             Segment::MSH(m) => m.to_string(),
-            Segment::Generic(g) => g.to_string()
+            Segment::Generic(g) => g.to_string(),
         }
     }
 
@@ -48,37 +52,6 @@ impl<'a> Segment<'a> {
         }
     }
 }
-
-// impl<'a> Index<String> for Segment<'a> {
-//     type Output = &str;
-//     // Handle 2nd element of `PID.F3.R1.C1`
-//     fn index(&self, idx: String) -> &Self::Output {
-//         let slices: Vec<&str> = idx.split(".");
-//         let fieldno = slices.first()[1..] as u8;
-//         let found: Vec<&str> = self
-//             .fields
-//             .iter()
-//             .filter_map(|s| match s {
-//                 Segment::Generic((x) => {
-//                     if x.fields[fieldno] {
-//                         Some(x)
-//                     } else {
-//                         None
-//                     }
-//                 }
-//                 _ => None,
-//             })
-//             .map(|s| 
-//                 if slices.len() > 1 {
-//                     s.index(slices[1..]).join(".")
-//                 } else {
-//                     s.as_str()
-//                 }
-//             )
-//             .collect();
-//         found
-//     }
-// }
 
 #[cfg(test)]
 mod tests {

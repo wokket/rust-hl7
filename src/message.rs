@@ -95,6 +95,11 @@ impl<'a> Message<'a> {
     pub fn to_string(&self) -> String {
         self.source.clone().to_owned()
     }
+
+    /// Export source to str
+    pub fn as_str(&self) -> &'a str {
+        self.source
+    }
 }
 
 impl<'a> Clone for Message<'a> {

@@ -47,6 +47,16 @@ impl<'a> Field<'a> {
         }
     }
 
+    /// Export valus to owned String
+    pub fn to_string(&self) -> String {
+        self.value().clone().to_owned()
+    }
+
+    /// Export valus to str
+    pub fn as_str(&self) -> &'a str {
+        self.value()
+    }
+
     /// Method to get the underlying components of the value in this field.
     pub fn components(&self, delims: &Separators) -> Vec<&'a str> {
         match self {
@@ -64,13 +74,6 @@ impl<'a> Field<'a> {
                     .map(|sc| sc.split(delims.subcomponent).collect::<Vec<&'a str>>())
                     .collect()
             }
-        }
-    }
-
-    /// Extract field value to owned String
-    pub fn to_string(&self) -> String {
-        match self {
-            Field::Generic(s) => s.clone().to_owned()
         }
     }
 }

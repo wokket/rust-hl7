@@ -26,16 +26,25 @@ impl<'a> Segment<'a> {
 
         let seg = match fields[0].value() {
             "MSH" => Segment::MSH(MshSegment::parse(&input, delims)?),
-            _ => Segment::Generic(GenericSegment { fields }),
+            _ => Segment::Generic(GenericSegment {source: &input, delim: delims.field, fields }),
         };
 
         Ok(seg)
     }
 
-    pub fn to_string(&self, delims: &Separators) -> String {
+    /// Export source to owned String
+    pub fn to_string(&self) -> String {
         match self {
             Segment::MSH(m) => m.to_string(),
-            Segment::Generic(g) => g.to_string(delims)
+            Segment::Generic(g) => g.to_string()
+        }
+    }
+
+    /// Export source to str
+    pub fn as_str(&self) -> &'a str {
+        match self {
+            Segment::MSH(m) => m.as_str(),
+            Segment::Generic(g) => g.as_str(),
         }
     }
 }

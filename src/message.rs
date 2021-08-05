@@ -1,7 +1,6 @@
 use super::segments::*;
 use super::separators::Separators;
 use super::*;
-use std::collections::VecDeque;
 use std::ops::Index;
 
 /// A Message is an entire HL7 message parsed into it's constituent segments, fields, repeats and subcomponents,
@@ -132,7 +131,7 @@ impl<'a> Index<String> for Message<'a> {
     /// Access Segment, Field, or sub-field string references by string index
     fn index(&self, idx: String) -> &Self::Output {
         // Parse index elements
-        let mut indices: Vec<&str> = idx.split(".").collect();
+        let indices: Vec<&str> = idx.split(".").collect();
         let seg_name = indices[0];
         // Find our first segment without offending the borow checker
         let seg_index = self

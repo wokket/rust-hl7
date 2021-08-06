@@ -19,14 +19,14 @@ impl<'a> Segment<'a> {
     pub fn parse(input: &'a str, delims: &Separators) -> Result<Segment<'a>, Hl7ParseError> {
         let fields: Result<Vec<Field<'a>>, Hl7ParseError> = input
             .split(delims.field)
-            .map(|line| Field::parse(line, &delims))
+            .map(|line| Field::parse(line, delims))
             .collect();
 
         let fields = fields?;
 
         let seg = match fields[0].value() {
-            "MSH" => Segment::MSH(MshSegment::parse(&input, delims)?),
-            _ => Segment::Generic(GenericSegment::parse(&input, delims)?),
+            "MSH" => Segment::MSH(MshSegment::parse(input, delims)?),
+            _ => Segment::Generic(GenericSegment::parse(input, delims)?),
         };
 
         Ok(seg)

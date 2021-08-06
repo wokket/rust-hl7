@@ -19,8 +19,9 @@ impl<'a> Field<'a> {
             .iter()
             .map(|c| c.split(delims.subcomponent).collect::<Vec<&'a str>>())
             .collect();
+
         let field = Field {
-            source: &input,
+            source: input,
             delims: *delims,
             components,
             subcomponents,
@@ -47,7 +48,7 @@ impl<'a> Field<'a> {
     ) -> Result<Option<Field<'a>>, Hl7ParseError> {
         match input {
             None => Ok(None),
-            Some(x) if x.len() == 0 => Ok(None),
+            Some(x) if x.is_empty() => Ok(None),
             Some(x) => Ok(Some(Field::parse(x, delims)?)),
         }
     }
@@ -107,24 +108,30 @@ impl<'a> Index<String> for Field<'a> {
     type Output = &'a str;
     fn index(&self, sidx: String) -> &Self::Output {
         let parts = sidx.split('.').collect::<Vec<&str>>();
+
         if parts.len() == 1 {
             let stringnums = parts[0]
                 .chars()
                 .filter(|c| c.is_digit(10))
                 .collect::<String>();
             let idx: usize = stringnums.parse().unwrap();
-            return &self[idx - 1];
+
+            &self[idx - 1]
         } else if parts.len() == 2 {
             let stringnums = parts[0]
                 .chars()
                 .filter(|c| c.is_digit(10))
                 .collect::<String>();
+
             let idx0: usize = stringnums.parse().unwrap();
+
             let stringnums = parts[1]
                 .chars()
                 .filter(|c| c.is_digit(10))
                 .collect::<String>();
+
             let idx1: usize = stringnums.parse().unwrap();
+
             &self[(idx0 - 1, idx1 - 1)]
         } else {
             &""

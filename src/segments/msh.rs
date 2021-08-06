@@ -45,7 +45,7 @@ impl<'a> MshSegment<'a> {
         let _ = fields.next(); //consume the delimiter chars
 
         let msh = MshSegment {
-            source: &input,
+            source: input,
             msh_1_field_separator: delims.field,
             msh_2_encoding_characters: delims.to_owned(),
             msh_3_sending_application: Field::parse_optional(fields.next(), delims)?,

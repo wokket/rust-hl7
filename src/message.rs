@@ -1,6 +1,7 @@
 use super::segments::*;
 use super::separators::Separators;
 use super::*;
+use std::fmt::Display;
 use std::ops::Index;
 
 /// A Message is an entire HL7 message parsed into it's constituent segments, fields, repeats and subcomponents,
@@ -16,6 +17,8 @@ impl<'a> Message<'a> {
     /// Takes the source HL7 string and parses it into this message.  Segments
     /// and other data are slices (`&str`) into the source HL7
     pub fn from_str(source: &'a str) -> Result<Self, Hl7ParseError> {
+        //TODO: Try and get this as a std::str::FromStr impl  (lifetimes)
+
         let delimiters = str::parse::<Separators>(source)?;
 
         let segments: Result<Vec<Segment<'a>>, Hl7ParseError> = source
@@ -90,22 +93,22 @@ impl<'a> Message<'a> {
         Ok(vecs)
     }
 
-    /// Export source to owned String
-    pub fn to_string(&self) -> String {
-        self.source.clone().to_owned()
-    }
-
     /// Export source to str
     pub fn as_str(&self) -> &'a str {
         self.source
     }
 }
 
+impl<'a> Display for Message<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.source)
+    }
+}
+
 impl<'a> Clone for Message<'a> {
-    /// Creates a new Message object using a clone of the original's source
+    /// Creates a new cloned Message object referencing the same source slice as the original.
     fn clone(&self) -> Self {
-        let msg = Message::from_str(self.source.clone()).unwrap();
-        msg
+        Message::from_str(self.source).unwrap()
     }
 }
 
@@ -134,7 +137,7 @@ impl<'a> Index<String> for Message<'a> {
     /// Access Segment, Field, or sub-field string references by string index
     fn index(&self, idx: String) -> &Self::Output {
         // Parse index elements
-        let indices: Vec<&str> = idx.split(".").collect();
+        let indices: Vec<&str> = idx.split('.').collect();
         let seg_name = indices[0];
         // Find our first segment without offending the borow checker
         let seg_index = self

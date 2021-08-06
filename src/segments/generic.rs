@@ -15,12 +15,12 @@ impl<'a> GenericSegment<'a> {
     pub fn parse(input: &'a str, delims: &Separators) -> Result<GenericSegment<'a>, Hl7ParseError> {
         let fields: Result<Vec<Field<'a>>, Hl7ParseError> = input
             .split(delims.field)
-            .map(|line| Field::parse(line, &delims))
+            .map(|line| Field::parse(line, delims))
             .collect();
 
         let fields = fields?;
         let seg = GenericSegment {
-            source: &input,
+            source: input,
             delim: delims.segment,
             fields,
         };
@@ -81,7 +81,7 @@ impl<'a> Index<String> for GenericSegment<'a> {
     type Output = &'a str;
     /// Access Field as string reference
     fn index(&self, fidx: String) -> &Self::Output {
-        let sections = fidx.split(".").collect::<Vec<&str>>();
+        let sections = fidx.split('.').collect::<Vec<&str>>();
         match sections.len() {
             1 => {
                 let stringnum = sections[0]

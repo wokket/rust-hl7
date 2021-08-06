@@ -115,7 +115,7 @@ impl<'a> Index<usize> for Message<'a> {
     /// Access Segment string reference by numeric index
     fn index(&self, idx: usize) -> &Self::Output {
         if idx > self.segments.len() {
-            return &""
+            return &"";
         }
         let seg = &self.segments[idx];
         // Return the appropriate source reference
@@ -142,8 +142,8 @@ impl<'a> Index<String> for Message<'a> {
             .iter()
             .position(|r| &r.as_str()[..seg_name.len()] == seg_name);
         match seg_index {
-            Some(_) => {},
-            None => return &""
+            Some(_) => {}
+            None => return &"",
         }
         let seg = &self.segments[seg_index.unwrap()];
         // Return the appropriate source reference
@@ -151,10 +151,12 @@ impl<'a> Index<String> for Message<'a> {
             // Short circuit for now
             Segment::MSH(m) => &m.source,
             // Parse out slice depth
-            Segment::Generic(g) => if indices.len() < 2 {
-                &g.source
-            } else {
-                &g[indices[1..].join(".")]
+            Segment::Generic(g) => {
+                if indices.len() < 2 {
+                    &g.source
+                } else {
+                    &g[indices[1..].join(".")]
+                }
             }
         }
     }

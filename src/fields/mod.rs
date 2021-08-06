@@ -83,7 +83,9 @@ impl<'a> Clone for Field<'a> {
 impl<'a> Index<usize> for Field<'a> {
     type Output = &'a str;
     fn index(&self, idx: usize) -> &Self::Output {
-        if idx > self.components.len() - 1 { return &"" }
+        if idx > self.components.len() - 1 {
+            return &"";
+        }
         &self.components[idx]
     }
 }
@@ -92,8 +94,9 @@ impl<'a> Index<usize> for Field<'a> {
 impl<'a> Index<(usize, usize)> for Field<'a> {
     type Output = &'a str;
     fn index(&self, idx: (usize, usize)) -> &Self::Output {
-        if idx.0 > self.components.len() - 1 ||
-        idx.1 > self.subcomponents[idx.0].len() - 1 { return &"" }
+        if idx.0 > self.components.len() - 1 || idx.1 > self.subcomponents[idx.0].len() - 1 {
+            return &"";
+        }
         &self.subcomponents[idx.0][idx.1]
     }
 }
@@ -105,17 +108,20 @@ impl<'a> Index<String> for Field<'a> {
     fn index(&self, sidx: String) -> &Self::Output {
         let parts = sidx.split('.').collect::<Vec<&str>>();
         if parts.len() == 1 {
-            let stringnums = parts[0].chars()
+            let stringnums = parts[0]
+                .chars()
                 .filter(|c| c.is_digit(10))
                 .collect::<String>();
             let idx: usize = stringnums.parse().unwrap();
-            return &self[idx - 1]
+            return &self[idx - 1];
         } else if parts.len() == 2 {
-            let stringnums = parts[0].chars()
+            let stringnums = parts[0]
+                .chars()
                 .filter(|c| c.is_digit(10))
                 .collect::<String>();
             let idx0: usize = stringnums.parse().unwrap();
-            let stringnums = parts[1].chars()
+            let stringnums = parts[1]
+                .chars()
                 .filter(|c| c.is_digit(10))
                 .collect::<String>();
             let idx1: usize = stringnums.parse().unwrap();

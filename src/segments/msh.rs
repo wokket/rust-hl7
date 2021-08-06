@@ -5,7 +5,7 @@ use super::*;
 /// The most important Segment, almost all HL7 messages have an MSH (MLLP simple ack I'm looking at you).
 /// Given the importance of this segment for driving application behaviour, it gets the special treatment
 /// of a fully typed segment, not just a bag of fields....
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 pub struct MshSegment<'a> {
     pub source: &'a str,
     //this initial layout largely stolen from the _other_ hl7 crate: https://github.com/njaremko/hl7
@@ -90,6 +90,14 @@ impl<'a> Display for MshSegment<'a> {
     }
 }
 
+impl<'a> Clone for MshSegment<'a> {
+    /// Creates a new Message object using a clone of the original's source
+    fn clone(&self) -> Self {
+        let delims = self.msh_2_encoding_characters;
+        MshSegment::parse(self.source, &delims).unwrap()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -136,6 +144,17 @@ mod tests {
         let msh = MshSegment::parse(hl7, &delims)?;
         let gen = msh.as_generic().unwrap();
         assert_eq!("ELAB-3",gen["F3"]);
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_msh_clones_correctly() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
+        let delims = Separators::default();
+
+        let msh = MshSegment::parse(hl7, &delims)?;
+        let dolly = msh.clone();
+        assert_eq!(msh,dolly);
         Ok(())
     }
 }

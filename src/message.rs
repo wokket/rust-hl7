@@ -31,13 +31,13 @@ impl<'a> Message<'a> {
         Ok(msg)
     }
 
-    /// Extracts header element to an owned object for external use
-    pub fn msh(&self) -> Result<msh::MshSegment, Hl7ParseError> {
+    /// Extracts header element for external use
+    pub fn msh(&self) -> Result<&msh::MshSegment, Hl7ParseError> {
         let segment = self
             .segments
             .iter()
             .find_map(|s| match s {
-                segments::Segment::MSH(x) => Some(x.clone().to_owned()),
+                segments::Segment::MSH(x) => Some(x),
                 _ => None,
             })
             .expect("Failed to find hl7 header");

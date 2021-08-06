@@ -26,11 +26,7 @@ impl<'a> Segment<'a> {
 
         let seg = match fields[0].value() {
             "MSH" => Segment::MSH(MshSegment::parse(&input, delims)?),
-            _ => Segment::Generic(GenericSegment {
-                source: &input,
-                delim: delims.field,
-                fields,
-            }),
+            _ => Segment::Generic(GenericSegment::parse(&input, delims)?),
         };
 
         Ok(seg)

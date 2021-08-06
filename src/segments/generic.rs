@@ -1,4 +1,6 @@
 use super::fields::Field;
+use super::separators::Separators;
+use super::*;
 use std::ops::Index;
 
 /// A generic bag o' fields, representing an arbitrary segment.
@@ -10,6 +12,21 @@ pub struct GenericSegment<'a> {
 }
 
 impl<'a> GenericSegment<'a> {
+    /// Convert the given line of text into a GenericSegment.
+    pub fn parse(input: &'a str, delims: &Separators) -> Result<GenericSegment<'a>, Hl7ParseError> {
+        let fields: Result<Vec<Field<'a>>, Hl7ParseError> = input
+            .split(delims.field)
+            .map(|line| Field::parse(line, &delims))
+            .collect();
+
+        let fields = fields?;
+        let seg = GenericSegment {
+            source: &input,
+            delim: delims.segment,
+            fields
+        };
+        Ok(seg)
+    }
     /// Export source to owned String
     pub fn to_string(&self) -> String {
         self.source.clone().to_owned()

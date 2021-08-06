@@ -80,19 +80,9 @@ impl<'a> MshSegment<'a> {
     }
 
     /// Present MSH data in Generic segment
-    pub fn as_generic(&self) -> GenericSegment<'a> {
+    pub fn as_generic(&self) -> Result<GenericSegment<'a>, Hl7ParseError> {
         let delims = self.msh_2_encoding_characters;
-        let fields: Vec<Field<'a>> = self
-            .source
-            .split(delims.field)
-            .map(|line| Field::parse(line, &delims).unwrap())
-            .collect();
-
-        GenericSegment {
-            source: self.source,
-            delim: delims.field,
-            fields,
-        }
+        GenericSegment::parse(self.source, &delims)
     }
 }
 
@@ -131,6 +121,17 @@ mod tests {
 
         assert_eq!(msh.msh_8_security, None); //blank field check
         assert_eq!(msh.msh_12_version_id.value(), "2.4"); //we got to the end ok
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_msh_converts_to_generic() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
+        let delims = Separators::default();
+
+        let msh = MshSegment::parse(hl7, &delims)?;
+        let gen = msh.as_generic().unwrap();
+        assert_eq!("ELAB-3",gen["F3"]);
         Ok(())
     }
 }

@@ -55,6 +55,17 @@ impl Separators {
     }
 }
 
+use std::fmt::Display;
+impl Display for Separators {
+    /// Required for to_string() and other formatter consumers
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", String::from(self.component)
+        + &String::from(self.repeat)
+        + &String::from(self.escape_char)
+        + &String::from(self.subcomponent))
+    }
+}
+
 /// Expects to receive a full message (or at least a MSH segment) in order to parse
 /// out the separator chars.
 impl FromStr for Separators {
@@ -105,5 +116,10 @@ mod tests {
         //note the missing M
         let result = Separators::new("SH|^~\\&|CATH|StJohn|AcmeHIS|StJohn|20061019172719||ACK^O01|MSGID12349876|P|2.3\rMSA|AA|MSGID12349876");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn ensure_separators_to_string() {
+        assert_eq!("^~\\&", Separators::default().to_string());
     }
 }

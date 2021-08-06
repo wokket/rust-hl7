@@ -115,6 +115,23 @@ impl<'a> Clone for Message<'a> {
     }
 }
 
+impl<'a> From<&'a str> for Message<'a> {
+    /// Takes the source HL7 string and parses it into this message.  Segments
+    /// and other data are slices (`&str`) into the source HL7
+    fn from(source: &'a str) -> Message<'a> {
+        let delimiters = str::parse::<Separators>(source).unwrap();
+        let segments: Vec<Segment<'a>> = source
+            .split(delimiters.segment)
+            .map(|line| Segment::parse(line, &delimiters).unwrap())
+            .collect();
+        let msg = Message {
+            source,
+            segments,
+        };
+        msg
+    }
+}
+
 impl<'a> Index<usize> for Message<'a> {
     type Output = &'a str;
 
@@ -255,6 +272,15 @@ mod tests {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
         let msg = Message::try_from(hl7)?;
         assert_eq!(msg[String::from("OBR.F1.R2.C1")], "sub");
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_from_str() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg1 = Message::from_str(hl7)?;
+        let msg2 = Message::from(hl7);
+        assert_eq!(msg1 ,msg2);
         Ok(())
     }
 }

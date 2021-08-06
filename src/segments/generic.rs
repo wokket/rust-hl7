@@ -1,7 +1,6 @@
 use super::fields::Field;
 use super::separators::Separators;
 use super::*;
-use std::ops::Index;
 
 /// A generic bag o' fields, representing an arbitrary segment.
 #[derive(Debug, PartialEq, Clone)]
@@ -27,10 +26,6 @@ impl<'a> GenericSegment<'a> {
         };
         Ok(seg)
     }
-    /// Export source to owned String
-    pub fn to_string(&self) -> String {
-        self.source.clone().to_owned()
-    }
 
     /// Export source to str
     pub fn as_str(&self) -> &'a str {
@@ -38,6 +33,15 @@ impl<'a> GenericSegment<'a> {
     }
 }
 
+use std::fmt::Display;
+impl<'a> Display for GenericSegment<'a> {
+    /// Required for to_string() and other formatter consumers
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.source)
+    }
+}
+
+use std::ops::Index;
 impl<'a> Index<usize> for GenericSegment<'a> {
     type Output = &'a str;
     /// Access Field as string reference

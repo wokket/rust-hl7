@@ -1,7 +1,5 @@
 use super::separators::Separators;
 use super::*;
-use std::ops::Index;
-
 /// Represents a single field inside the HL7.  Note that fields can include repeats, components and sub-components.
 /// See [the spec](http://www.hl7.eu/HL7v2x/v251/std251/ch02.html#Heading13) for more info
 #[derive(Debug, PartialEq)]
@@ -59,17 +57,21 @@ impl<'a> Field<'a> {
         self.source
     }
 
-    /// Export value to owned String
-    pub fn to_string(&self) -> String {
-        self.source.clone().to_owned()
-    }
-
     /// Export value to str
     pub fn as_str(&self) -> &'a str {
         self.source
     }
 }
 
+use std::fmt::Display;
+impl<'a> Display for Field<'a> {
+    /// Required for to_string() and other formatter consumers
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.source)
+    }
+}
+
+use std::ops::Index;
 impl<'a> Clone for Field<'a> {
     /// Creates a new Message object using a clone of the original's source
     fn clone(&self) -> Self {

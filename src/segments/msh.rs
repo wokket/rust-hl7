@@ -69,10 +69,6 @@ impl<'a> MshSegment<'a> {
 
         Ok(msh)
     }
-    /// Export source to owned String
-    pub fn to_string(&self) -> String {
-        self.source.clone().to_owned()
-    }
 
     /// Export source to str
     pub fn as_str(&self) -> &'a str {
@@ -83,6 +79,14 @@ impl<'a> MshSegment<'a> {
     pub fn as_generic(&self) -> Result<GenericSegment<'a>, Hl7ParseError> {
         let delims = self.msh_2_encoding_characters;
         GenericSegment::parse(self.source, &delims)
+    }
+}
+
+use std::fmt::Display;
+impl<'a> Display for MshSegment<'a> {
+    /// Required for to_string() and other formatter consumers
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.source)
     }
 }
 

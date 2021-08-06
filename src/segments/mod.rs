@@ -26,10 +26,29 @@ impl<'a> Segment<'a> {
 
         let seg = match fields[0].value() {
             "MSH" => Segment::MSH(MshSegment::parse(&input, delims)?),
-            _ => Segment::Generic(GenericSegment { fields }),
+            _ => Segment::Generic(GenericSegment::parse(&input, delims)?),
         };
 
         Ok(seg)
+    }
+
+    /// Export source to str
+    pub fn as_str(&self) -> &'a str {
+        match self {
+            Segment::MSH(m) => m.as_str(),
+            Segment::Generic(g) => g.as_str(),
+        }
+    }
+}
+
+use std::fmt::Display;
+impl<'a> Display for Segment<'a> {
+    /// Required for to_string() and other formatter consumers
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Segment::MSH(m) => write!(f, "{}", m.source),
+            Segment::Generic(g) => write!(f, "{}", g.source),
+        }
     }
 }
 

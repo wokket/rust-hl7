@@ -5,8 +5,9 @@ use super::*;
 /// The most important Segment, almost all HL7 messages have an MSH (MLLP simple ack I'm looking at you).
 /// Given the importance of this segment for driving application behaviour, it gets the special treatment
 /// of a fully typed segment, not just a bag of fields....
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 pub struct MshSegment<'a> {
+    pub source: &'a str,
     //this initial layout largely stolen from the _other_ hl7 crate: https://github.com/njaremko/hl7
     pub msh_1_field_separator: char,
     pub msh_2_encoding_characters: Separators,
@@ -44,6 +45,7 @@ impl<'a> MshSegment<'a> {
         let _ = fields.next(); //consume the delimiter chars
 
         let msh = MshSegment {
+            source: &input,
             msh_1_field_separator: delims.field,
             msh_2_encoding_characters: delims.to_owned(),
             msh_3_sending_application: Field::parse_optional(fields.next(), delims)?,
@@ -66,6 +68,33 @@ impl<'a> MshSegment<'a> {
         };
 
         Ok(msh)
+    }
+
+    /// Export source to str
+    pub fn as_str(&self) -> &'a str {
+        self.source
+    }
+
+    /// Present MSH data in Generic segment
+    pub fn as_generic(&self) -> Result<GenericSegment<'a>, Hl7ParseError> {
+        let delims = self.msh_2_encoding_characters;
+        GenericSegment::parse(self.source, &delims)
+    }
+}
+
+use std::fmt::Display;
+impl<'a> Display for MshSegment<'a> {
+    /// Required for to_string() and other formatter consumers
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.source)
+    }
+}
+
+impl<'a> Clone for MshSegment<'a> {
+    /// Creates a new Message object using a clone of the original's source
+    fn clone(&self) -> Self {
+        let delims = self.msh_2_encoding_characters;
+        MshSegment::parse(self.source, &delims).unwrap()
     }
 }
 
@@ -104,6 +133,28 @@ mod tests {
 
         assert_eq!(msh.msh_8_security, None); //blank field check
         assert_eq!(msh.msh_12_version_id.value(), "2.4"); //we got to the end ok
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_msh_converts_to_generic() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
+        let delims = Separators::default();
+
+        let msh = MshSegment::parse(hl7, &delims)?;
+        let gen = msh.as_generic().unwrap();
+        assert_eq!("ELAB-3",gen["F3"]);
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_msh_clones_correctly() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
+        let delims = Separators::default();
+
+        let msh = MshSegment::parse(hl7, &delims)?;
+        let dolly = msh.clone();
+        assert_eq!(msh,dolly);
         Ok(())
     }
 }

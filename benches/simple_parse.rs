@@ -13,7 +13,7 @@ fn message_parse(c: &mut Criterion) {
             let seg = m.segments.first();
 
             if let Some(Segment::MSH(msh)) = seg {
-                let _app = msh.msh_3_sending_application.unwrap();
+                let _app = msh.msh_3_sending_application.as_ref().unwrap();
                 //println!("{}", _app.value());
             }
         })

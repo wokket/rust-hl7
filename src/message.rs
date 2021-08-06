@@ -114,6 +114,9 @@ impl<'a> Index<usize> for Message<'a> {
 
     /// Access Segment string reference by numeric index
     fn index(&self, idx: usize) -> &Self::Output {
+        if idx > self.segments.len() {
+            return &""
+        }
         let seg = &self.segments[idx];
         // Return the appropriate source reference
         match seg {
@@ -137,9 +140,12 @@ impl<'a> Index<String> for Message<'a> {
         let seg_index = self
             .segments
             .iter()
-            .position(|r| &r.as_str()[..seg_name.len()] == seg_name)
-            .unwrap();
-        let seg = &self.segments[seg_index];
+            .position(|r| &r.as_str()[..seg_name.len()] == seg_name);
+        match seg_index {
+            Some(_) => {},
+            None => return &""
+        }
+        let seg = &self.segments[seg_index.unwrap()];
         // Return the appropriate source reference
         match seg {
             // Short circuit for now
@@ -147,6 +153,15 @@ impl<'a> Index<String> for Message<'a> {
             // Parse out slice depth
             Segment::Generic(g) => &g[indices[1..].join(".")]
         }
+    }
+}
+
+impl<'a> Index<&str> for Message<'a> {
+    type Output = &'a str;
+
+    /// Access Segment, Field, or sub-field string references by string index
+    fn index(&self, idx: &str) -> &Self::Output {
+        &self[String::from(idx)]
     }
 }
 

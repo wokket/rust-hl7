@@ -81,6 +81,7 @@ impl<'a> Clone for Field<'a> {
 impl<'a> Index<usize> for Field<'a> {
     type Output = &'a str;
     fn index(&self, idx: usize) -> &Self::Output {
+        if idx > self.components.len() - 1 { return &"" }
         &self.components[idx]
     }
 }
@@ -89,6 +90,8 @@ impl<'a> Index<usize> for Field<'a> {
 impl<'a> Index<(usize, usize)> for Field<'a> {
     type Output = &'a str;
     fn index(&self, idx: (usize, usize)) -> &Self::Output {
+        if idx.0 > self.components.len() - 1 ||
+        idx.1 > self.subcomponents[idx.0].len() - 1 { return &"" }
         &self.subcomponents[idx.0][idx.1]
     }
 }
@@ -114,10 +117,19 @@ impl<'a> Index<String> for Field<'a> {
                 .filter(|c| c.is_digit(10))
                 .collect::<String>();
             let idx1: usize = stringnums.parse().unwrap();
-            &self[(idx0 - 1,idx1 - 1)]
+            &self[(idx0 - 1, idx1 - 1)]
         } else {
             &""
         }
+    }
+}
+
+impl<'a> Index<&str> for Field<'a> {
+    type Output = &'a str;
+
+    /// Access Segment, Field, or sub-field string references by string index
+    fn index(&self, idx: &str) -> &Self::Output {
+        &self[String::from(idx)]
     }
 }
 
@@ -220,7 +232,9 @@ mod tests {
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
         let idx0 = String::from("R2");
         let idx1 = String::from("R2.C2");
+        let oob = String::from("R2.C3");
         assert_eq!(f[idx0.clone()], "yyy&zzz");
         assert_eq!(f[idx1], "zzz");
+        assert_eq!(f[oob], "");
     }
 }

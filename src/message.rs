@@ -151,7 +151,11 @@ impl<'a> Index<String> for Message<'a> {
             // Short circuit for now
             Segment::MSH(m) => &m.source,
             // Parse out slice depth
-            Segment::Generic(g) => &g[indices[1..].join(".")]
+            Segment::Generic(g) => if indices.len() < 2 {
+                &g.source
+            } else {
+                &g[indices[1..].join(".")]
+            }
         }
     }
 }

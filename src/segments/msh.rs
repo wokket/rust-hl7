@@ -143,7 +143,7 @@ mod tests {
 
         let msh = MshSegment::parse(hl7, &delims)?;
         let gen = msh.as_generic().unwrap();
-        assert_eq!("ELAB-3",gen["F3"]);
+        assert_eq!("ELAB-3", gen["F3"]);
         Ok(())
     }
 
@@ -154,7 +154,7 @@ mod tests {
 
         let msh = MshSegment::parse(hl7, &delims)?;
         let dolly = msh.clone();
-        assert_eq!(msh,dolly);
+        assert_eq!(msh, dolly);
         Ok(())
     }
 }

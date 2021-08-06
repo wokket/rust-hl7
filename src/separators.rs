@@ -59,10 +59,14 @@ use std::fmt::Display;
 impl Display for Separators {
     /// Required for to_string() and other formatter consumers
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", String::from(self.component)
-        + &String::from(self.repeat)
-        + &String::from(self.escape_char)
-        + &String::from(self.subcomponent))
+        write!(
+            f,
+            "{}",
+            String::from(self.component)
+                + &String::from(self.repeat)
+                + &String::from(self.escape_char)
+                + &String::from(self.subcomponent)
+        )
     }
 }
 

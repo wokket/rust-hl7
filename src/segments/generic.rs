@@ -22,7 +22,7 @@ impl<'a> GenericSegment<'a> {
         let seg = GenericSegment {
             source: &input,
             delim: delims.segment,
-            fields
+            fields,
         };
         Ok(seg)
     }
@@ -46,7 +46,9 @@ impl<'a> Index<usize> for GenericSegment<'a> {
     type Output = &'a str;
     /// Access Field as string reference
     fn index(&self, fidx: usize) -> &Self::Output {
-        if fidx > self.fields.len() - 1 { return &"" };
+        if fidx > self.fields.len() - 1 {
+            return &"";
+        };
         &self.fields[fidx].source
     }
 }
@@ -55,9 +57,8 @@ impl<'a> Index<(usize, usize)> for GenericSegment<'a> {
     type Output = &'a str;
     /// Access Field component as string reference
     fn index(&self, fidx: (usize, usize)) -> &Self::Output {
-        if fidx.0 > self.fields.len() - 1 ||
-        fidx.1 > self.fields[fidx.0].components.len() - 1 {
-            return &""
+        if fidx.0 > self.fields.len() - 1 || fidx.1 > self.fields[fidx.0].components.len() - 1 {
+            return &"";
         }
         &self.fields[fidx.0][fidx.1]
     }
@@ -67,10 +68,11 @@ impl<'a> Index<(usize, usize, usize)> for GenericSegment<'a> {
     type Output = &'a str;
     /// Access Field subcomponent as string reference
     fn index(&self, fidx: (usize, usize, usize)) -> &Self::Output {
-        if fidx.0 > self.fields.len() - 1 ||
-        fidx.1 > self.fields[fidx.0].components.len() - 1 ||
-        fidx.2 > self.fields[fidx.0].subcomponents[fidx.1].len() - 1 {
-            return &""
+        if fidx.0 > self.fields.len() - 1
+            || fidx.1 > self.fields[fidx.0].components.len() - 1
+            || fidx.2 > self.fields[fidx.0].subcomponents[fidx.1].len() - 1
+        {
+            return &"";
         }
         &self.fields[fidx.0][(fidx.1, fidx.2)]
     }
@@ -82,14 +84,16 @@ impl<'a> Index<String> for GenericSegment<'a> {
         let sections = fidx.split(".").collect::<Vec<&str>>();
         match sections.len() {
             1 => {
-                let stringnum = sections[0].chars()
+                let stringnum = sections[0]
+                    .chars()
                     .filter(|c| c.is_digit(10))
                     .collect::<String>();
                 let idx: usize = stringnum.parse().unwrap();
                 &self[idx]
-            },
+            }
             _ => {
-                let stringnum = sections[0].chars()
+                let stringnum = sections[0]
+                    .chars()
                     .filter(|c| c.is_digit(10))
                     .collect::<String>();
                 let idx: usize = stringnum.parse().unwrap();
@@ -132,12 +136,12 @@ mod tests {
         let msg = Message::from_str(hl7).unwrap();
         let (f, c, s, oob) = match &msg.segments[1] {
             Segment::Generic(x) => (
-                x[String::from("F1")], 
-                x[String::from("F1.R2")], 
+                x[String::from("F1")],
+                x[String::from("F1.R2")],
                 x[String::from("F1.R2.C1")],
-                String::from(x[String::from("F10")]) +
-                    x[String::from("F1.R10")] +
-                    x[String::from("F1.R2.C10")]
+                String::from(x[String::from("F10")])
+                    + x[String::from("F1.R10")]
+                    + x[String::from("F1.R2.C10")],
             ),
             _ => ("", "", "", String::from("")),
         };

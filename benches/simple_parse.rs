@@ -11,7 +11,7 @@ fn message_parse(c: &mut Criterion) {
     c.bench_function("oru parse", |b| {
        
         b.iter(|| {
-            let m = Message::try_from(get_sample_message()).unwrap();
+            let m = Message::try_from(msg).unwrap();
             let seg = m.segments.first();
 
             if let Some(Segment::MSH(msh)) = seg {

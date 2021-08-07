@@ -1,6 +1,7 @@
 use super::segments::*;
 use super::separators::Separators;
 use super::*;
+use std::convert::TryFrom;
 use std::fmt::Display;
 use std::ops::Index;
 
@@ -14,26 +15,6 @@ pub struct Message<'a> {
 }
 
 impl<'a> Message<'a> {
-    /// Takes the source HL7 string and parses it into this message.  Segments
-    /// and other data are slices (`&str`) into the source HL7
-    pub fn from_str(source: &'a str) -> Result<Self, Hl7ParseError> {
-        //TODO: Try and get this as a std::str::FromStr impl  (lifetimes)
-
-        let delimiters = str::parse::<Separators>(source)?;
-
-        let segments: Result<Vec<Segment<'a>>, Hl7ParseError> = source
-            .split(delimiters.segment)
-            .map(|line| Segment::parse(line, &delimiters))
-            .collect();
-
-        let msg = Message {
-            source,
-            segments: segments?,
-        };
-
-        Ok(msg)
-    }
-
     /// Extracts header element for external use
     pub fn msh(&self) -> Result<&msh::MshSegment, Hl7ParseError> {
         let segment = self
@@ -99,6 +80,28 @@ impl<'a> Message<'a> {
     }
 }
 
+impl<'a> TryFrom<&'a str> for Message<'a> {
+    type Error = Hl7ParseError;
+
+    /// Takes the source HL7 string and parses it into this message.  Segments
+    /// and other data are slices (`&str`) into the source HL7
+    fn try_from(source: &'a str) -> Result<Self, Self::Error> {
+        let delimiters = str::parse::<Separators>(source)?;
+
+        let segments: Result<Vec<Segment<'a>>, Hl7ParseError> = source
+            .split(delimiters.segment)
+            .map(|line| Segment::parse(line, &delimiters))
+            .collect();
+
+        let msg = Message {
+            source,
+            segments: segments?,
+        };
+
+        Ok(msg)
+    }
+}
+
 impl<'a> Display for Message<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.source)
@@ -108,7 +111,7 @@ impl<'a> Display for Message<'a> {
 impl<'a> Clone for Message<'a> {
     /// Creates a new cloned Message object referencing the same source slice as the original.
     fn clone(&self) -> Self {
-        Message::from_str(self.source).unwrap()
+        Message::try_from(self.source).unwrap()
     }
 }
 
@@ -181,7 +184,7 @@ mod tests {
     #[test]
     fn ensure_segments_are_added() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
-        let msg = Message::from_str(hl7)?;
+        let msg = Message::try_from(hl7)?;
 
         assert_eq!(msg.segments.len(), 2);
         Ok(())
@@ -190,7 +193,7 @@ mod tests {
     #[test]
     fn ensure_generic_segments_are_returned() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
-        let msg = Message::from_str(hl7)?;
+        let msg = Message::try_from(hl7)?;
 
         assert_eq!(msg.generic_segments().unwrap().len(), 1);
         Ok(())
@@ -199,7 +202,7 @@ mod tests {
     #[test]
     fn ensure_generic_segments_are_found() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
-        let msg = Message::from_str(hl7)?;
+        let msg = Message::try_from(hl7)?;
 
         assert_eq!(msg.generic_segments_by_name("OBR").unwrap().len(), 1);
         Ok(())
@@ -208,7 +211,7 @@ mod tests {
     #[test]
     fn ensure_msh_is_returned() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
-        let msg = Message::from_str(hl7)?;
+        let msg = Message::try_from(hl7)?;
 
         assert_eq!(msg.msh().unwrap().msh_1_field_separator, '|');
         Ok(())
@@ -216,7 +219,7 @@ mod tests {
     #[test]
     fn ensure_segments_convert_to_vectors() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
-        let msg = Message::from_str(hl7)?;
+        let msg = Message::try_from(hl7)?;
         let segs = msg.generic_segments_by_name("OBR")?;
         let sval = segs.first().unwrap().fields.first().unwrap().value();
         let vecs = Message::segments_to_str_vecs(segs).unwrap();
@@ -228,7 +231,7 @@ mod tests {
     #[test]
     fn ensure_clones_are_owned() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
-        let msg = Message::from_str(hl7)?;
+        let msg = Message::try_from(hl7)?;
         // Verify that we can clone and take ownership
         let dolly = msg.clone();
         let dolly = dolly.to_owned();
@@ -242,7 +245,7 @@ mod tests {
     #[test]
     fn ensure_to_string() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
-        let msg = Message::from_str(hl7)?;
+        let msg = Message::try_from(hl7)?;
         assert_eq!(msg.to_string(), String::from(hl7));
         Ok(())
     }
@@ -250,7 +253,7 @@ mod tests {
     #[test]
     fn ensure_index() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
-        let msg = Message::from_str(hl7)?;
+        let msg = Message::try_from(hl7)?;
         assert_eq!(msg[String::from("OBR.F1.R2.C1")], "sub");
         Ok(())
     }

@@ -31,6 +31,34 @@ impl<'a> GenericSegment<'a> {
     pub fn as_str(&self) -> &'a str {
         self.source
     }
+
+    /// Access Segment, Field, or sub-field string references by string index
+    pub fn query(&self, idx: &str) -> &'a str {
+        self.query_by_string(String::from(idx))
+    }
+
+    /// Access Field as string reference
+    pub fn query_by_string(&self, fidx: String) -> &'a str {
+        let sections = fidx.split('.').collect::<Vec<&str>>();
+        match sections.len() {
+            1 => {
+                let stringnum = sections[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnum.parse().unwrap();
+                &self[idx]
+            }
+            _ => {
+                let stringnum = sections[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnum.parse().unwrap();
+                &self.fields[idx][sections[1..].join(".")]
+            }
+        }
+    }
 }
 
 use std::fmt::Display;
@@ -77,40 +105,6 @@ impl<'a> Index<(usize, usize, usize)> for GenericSegment<'a> {
         &self.fields[fidx.0][(fidx.1, fidx.2)]
     }
 }
-impl<'a> Index<String> for GenericSegment<'a> {
-    type Output = &'a str;
-    /// Access Field as string reference
-    fn index(&self, fidx: String) -> &Self::Output {
-        let sections = fidx.split('.').collect::<Vec<&str>>();
-        match sections.len() {
-            1 => {
-                let stringnum = sections[0]
-                    .chars()
-                    .filter(|c| c.is_digit(10))
-                    .collect::<String>();
-                let idx: usize = stringnum.parse().unwrap();
-                &self[idx]
-            }
-            _ => {
-                let stringnum = sections[0]
-                    .chars()
-                    .filter(|c| c.is_digit(10))
-                    .collect::<String>();
-                let idx: usize = stringnum.parse().unwrap();
-                &self.fields[idx][sections[1..].join(".")]
-            }
-        }
-    }
-}
-
-impl<'a> Index<&str> for GenericSegment<'a> {
-    type Output = &'a str;
-
-    /// Access Segment, Field, or sub-field string references by string index
-    fn index(&self, idx: &str) -> &Self::Output {
-        &self[String::from(idx)]
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -137,12 +131,12 @@ mod tests {
         let msg = Message::try_from(hl7).unwrap();
         let (f, c, s, oob) = match &msg.segments[1] {
             Segment::Generic(x) => (
-                x[String::from("F1")],
-                x[String::from("F1.R2")],
-                x[String::from("F1.R2.C1")],
-                String::from(x[String::from("F10")])
-                    + x[String::from("F1.R10")]
-                    + x[String::from("F1.R2.C10")],
+                x.query_by_string(String::from("F1")),
+                x.query_by_string(String::from("F1.R2")),
+                x.query_by_string(String::from("F1.R2.C1")),
+                String::from(x.query("F10"))
+                    + x.query("F1.R10")
+                    + x.query("F1.R2.C10"),
             ),
             _ => ("", "", "", String::from("")),
         };

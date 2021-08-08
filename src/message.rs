@@ -80,28 +80,6 @@ impl<'a> Message<'a> {
     }
 }
 
-impl<'a> TryFrom<&'a str> for Message<'a> {
-    type Error = Hl7ParseError;
-
-    /// Takes the source HL7 string and parses it into this message.  Segments
-    /// and other data are slices (`&str`) into the source HL7
-    fn try_from(source: &'a str) -> Result<Self, Self::Error> {
-        let delimiters = str::parse::<Separators>(source)?;
-
-        let segments: Result<Vec<Segment<'a>>, Hl7ParseError> = source
-            .split(delimiters.segment)
-            .map(|line| Segment::parse(line, &delimiters))
-            .collect();
-
-        let msg = Message {
-            source,
-            segments: segments?,
-        };
-
-        Ok(msg)
-    }
-}
-
 impl<'a> Display for Message<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.source)
@@ -129,6 +107,16 @@ impl<'a> From<&'a str> for Message<'a> {
             segments,
         };
         msg
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Message<'a> {
+    type Error = Hl7ParseError;
+
+    /// Takes the source HL7 string and parses it into this message.  Segments
+    /// and other data are slices (`&str`) into the source HL7
+    fn try_from(source: &'a str) -> Result<Self, Self::Error> {
+        Ok(Message::from(source))
     }
 }
 

@@ -78,12 +78,14 @@ impl<'a> Message<'a> {
         self.source
     }
 
+    /// Wrap from() attempt in an error-handling Result
     fn try_from(source: &'a str) -> Result<Message<'a>, Hl7ParseError> {
         Ok(Message::from(source))
     }
 }
 
 impl<'a> Display for Message<'a> {
+    /// Default formatter
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.source)
     }

@@ -102,14 +102,15 @@ impl<'a> Message<'a> {
             .segments
             .iter()
             .position(|r| &r.as_str()[..seg_name.len()] == seg_name);
-        
-        match seg_index { //TODO: What is this doing...
+
+        match seg_index {
+            //TODO: What is this doing...
             Some(_) => {}
             None => return &"",
         }
 
         let seg = &self.segments[seg_index.unwrap()];
-        
+
         // Return the appropriate source reference
         match seg {
             // Short circuit for now
@@ -126,7 +127,8 @@ impl<'a> Message<'a> {
         }
     }
 
-    /// Access Segment, Field, or sub-field string references by string index
+    ///Access segment, field, or sub-field string references by passing a query string in dot notation.
+    ///See [`Self::query()`] for more information.
     pub fn query_by_string(&self, idx: String) -> &'a str {
         //TODO: Determine if we actually need this function... in what scenario are we passing a String in here rather an &str?
         self.query(idx.as_str())

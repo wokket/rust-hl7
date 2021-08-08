@@ -1,7 +1,7 @@
-use std::fmt::Display;
 use super::fields::Field;
 use super::separators::Separators;
 use super::*;
+use std::fmt::Display;
 
 /// The most important Segment, almost all HL7 messages have an MSH (MLLP simple ack I'm looking at you).
 /// Given the importance of this segment for driving application behaviour, it gets the special treatment

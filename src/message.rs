@@ -1,7 +1,6 @@
 use super::segments::*;
 use super::separators::Separators;
 use super::*;
-use std::convert::TryFrom;
 use std::fmt::Display;
 use std::ops::Index;
 
@@ -78,6 +77,10 @@ impl<'a> Message<'a> {
     pub fn as_str(&self) -> &'a str {
         self.source
     }
+
+    fn try_from(source: &'a str) -> Result<Message<'a>, Hl7ParseError> {
+        Ok(Message::from(source))
+    }
 }
 
 impl<'a> Display for Message<'a> {
@@ -107,16 +110,6 @@ impl<'a> From<&'a str> for Message<'a> {
             segments,
         };
         msg
-    }
-}
-
-impl<'a> TryFrom<&'a str> for Message<'a> {
-    type Error = Hl7ParseError;
-
-    /// Takes the source HL7 string and parses it into this message.  Segments
-    /// and other data are slices (`&str`) into the source HL7
-    fn try_from(source: &'a str) -> Result<Self, Self::Error> {
-        Ok(Message::from(source))
     }
 }
 
@@ -266,7 +259,7 @@ mod tests {
     #[test]
     fn ensure_from_str() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
-        let msg1 = Message::from_str(hl7)?;
+        let msg1 = Message::try_from(hl7)?;
         let msg2 = Message::from(hl7);
         assert_eq!(msg1 ,msg2);
         Ok(())

@@ -7,18 +7,69 @@ fn get_sample_message() -> &'static str {
 }
 
 fn message_parse(c: &mut Criterion) {
-    c.bench_function("oru parse", |b| {
+    c.bench_function("ORU parse", |b| {
         b.iter(|| {
-            let m = Message::try_from(get_sample_message()).unwrap();
+            let _ = Message::try_from(get_sample_message()).unwrap();
+        })
+    });
+}
+
+fn get_segments_by_name(c: &mut Criterion) {
+    c.bench_function("Get Segment By Name", |b| {
+        let m = Message::try_from(get_sample_message()).unwrap();
+
+        b.iter(|| {
+            let _segs = m.generic_segments_by_name("OBR").unwrap();
+            //assert!(segs.len() == 1);
+        })
+    });
+}
+
+fn get_msh_and_read_field(c: &mut Criterion) {
+
+    c.bench_function("Read Field from MSH (variable)", |b| {
+        let m = Message::try_from(get_sample_message()).unwrap();
+
+        b.iter(|| {
             let seg = m.segments.first();
 
             if let Some(Segment::MSH(msh)) = seg {
-                let _app = msh.msh_3_sending_application.as_ref().unwrap();
+                let _app = msh.msh_3_sending_application.as_ref().unwrap(); // direct variable access
                 //println!("{}", _app.value());
             }
         })
     });
 }
 
-criterion_group!(benches, message_parse);
+fn get_pid_and_read_field_via_vec(c: &mut Criterion) {
+
+    c.bench_function("Read Field from PID (lookup)", |b| {
+        let m = Message::try_from(get_sample_message()).unwrap();
+
+        b.iter(|| {
+            let seg = &m.segments[1];
+
+            if let Segment::Generic(pid) = seg {
+                let _field = pid[3];
+                assert_eq!(_field, "555-44-4444"); // lookup from vec
+            }
+        })
+    });
+}
+
+fn get_pid_and_read_field_via_query(c: &mut Criterion) {
+
+    c.bench_function("Read Field from PID (query)", |b| {
+        let m = Message::try_from(get_sample_message()).unwrap();
+
+        b.iter(|| {
+            let _val = m.query("PID.F3"); // query via Message
+            assert_eq!(_val, "555-44-4444"); // lookup from vec
+
+        })
+    });
+}
+
+
+criterion_group!(benches, message_parse, get_segments_by_name, get_msh_and_read_field, get_pid_and_read_field_via_vec, get_pid_and_read_field_via_query);
 criterion_main!(benches);

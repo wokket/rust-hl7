@@ -78,6 +78,46 @@ impl<'a> Message<'a> {
     pub fn as_str(&self) -> &'a str {
         self.source
     }
+
+    /// Access Segment, Field, or sub-field string references by string index
+    pub fn query(&self, idx: &str) -> &'a str {
+        // Parse index elements
+        let indices: Vec<&str> = idx.split('.').collect();
+        let seg_name = indices[0];
+        // Find our first segment without offending the borow checker
+
+        let seg_index = self
+            .segments
+            .iter()
+            .position(|r| &r.as_str()[..seg_name.len()] == seg_name);
+        
+        match seg_index { //TODO: What is this doing...
+            Some(_) => {}
+            None => return &"",
+        }
+
+        let seg = &self.segments[seg_index.unwrap()];
+        
+        // Return the appropriate source reference
+        match seg {
+            // Short circuit for now
+            Segment::MSH(m) => &m.source,
+            // Parse out slice depth
+            Segment::Generic(g) => {
+                if indices.len() < 2 {
+                    &g.source
+                } else {
+                    let query = indices[1..].join(".");
+                    &g.query_by_string(query)
+                }
+            }
+        }
+    }
+
+    /// Access Segment, Field, or sub-field string references by string index
+    pub fn query_by_string(&self, idx: String) -> &'a str {
+        self.query(idx.as_str())
+    }
 }
 
 impl<'a> TryFrom<&'a str> for Message<'a> {
@@ -258,7 +298,7 @@ mod tests {
     fn ensure_index() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
         let msg = Message::try_from(hl7)?;
-        assert_eq!(msg[String::from("OBR.F1.R2.C1")], "sub");
+        assert_eq!(msg.query("OBR.F1.R2.C1"), "sub");
         Ok(())
     }
 }

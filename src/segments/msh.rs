@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use super::fields::Field;
 use super::separators::Separators;
 use super::*;
@@ -82,7 +83,7 @@ impl<'a> MshSegment<'a> {
     }
 }
 
-use std::fmt::Display;
+
 impl<'a> Display for MshSegment<'a> {
     /// Required for to_string() and other formatter consumers
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -143,7 +144,7 @@ mod tests {
 
         let msh = MshSegment::parse(hl7, &delims)?;
         let gen = msh.as_generic().unwrap();
-        assert_eq!("ELAB-3", gen["F3"]);
+        assert_eq!("ELAB-3", gen.query("F3"));
         Ok(())
     }
 

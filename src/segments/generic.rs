@@ -1,6 +1,6 @@
+use super::{fields::Field, separators::Separators, Hl7ParseError};
 use std::fmt::Display;
 use std::ops::Index;
-use super::{Hl7ParseError, fields::Field, separators::Separators};
 
 /// A generic bag o' fields, representing an arbitrary segment.
 #[derive(Debug, PartialEq, Clone)]
@@ -58,9 +58,8 @@ impl<'a> GenericSegment<'a> {
                 let idx: usize = stringnum.parse().unwrap();
                 let field = &self.fields[idx];
                 let query = sections[1..].join(".");
-                
-                field.query_by_string(query)
 
+                field.query_by_string(query)
             }
         }
     }
@@ -174,9 +173,7 @@ mod tests {
                 x.query_by_string(String::from("F1")),
                 x.query_by_string(String::from("F1.R2")),
                 x.query_by_string(String::from("F1.R2.C1")),
-                String::from(x.query("F10"))
-                    + x.query("F1.R10")
-                    + x.query("F1.R2.C10"),
+                String::from(x.query("F10")) + x.query("F1.R10") + x.query("F1.R2.C10"),
             ),
             _ => ("", "", "", String::from("")),
         };

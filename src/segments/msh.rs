@@ -1,7 +1,7 @@
-use std::fmt::Display;
 use super::fields::Field;
 use super::separators::Separators;
 use super::*;
+use std::fmt::Display;
 
 /// The most important Segment, almost all HL7 messages have an MSH (MLLP simple ack I'm looking at you).
 /// Given the importance of this segment for driving application behaviour, it gets the special treatment
@@ -83,7 +83,6 @@ impl<'a> MshSegment<'a> {
     }
 }
 
-
 impl<'a> Display for MshSegment<'a> {
     /// Required for to_string() and other formatter consumers
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -92,7 +91,7 @@ impl<'a> Display for MshSegment<'a> {
 }
 
 impl<'a> Clone for MshSegment<'a> {
-    /// Creates a new Message object using a clone of the original's source
+    /// Creates a new Message object using _the same source_ slice as the original.
     fn clone(&self) -> Self {
         let delims = self.msh_2_encoding_characters;
         MshSegment::parse(self.source, &delims).unwrap()

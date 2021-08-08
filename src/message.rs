@@ -74,7 +74,19 @@ impl<'a> Message<'a> {
         Ok(vecs)
     }
 
-    /// Export source to str
+    /// Returns the source string slice used to create this Message initially.
+    /// ## Example:
+    /// ```
+    /// # use rusthl7::Hl7ParseError;
+    /// # use rusthl7::message::Message;
+    /// # use std::convert::TryFrom;
+    /// # fn main() -> Result<(), Hl7ParseError> {
+    /// let source = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
+    /// let m = Message::try_from(source)?;
+    /// assert_eq!(source, m.as_str());
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn as_str(&self) -> &'a str {
         self.source
     }
@@ -90,14 +102,15 @@ impl<'a> Message<'a> {
             .segments
             .iter()
             .position(|r| &r.as_str()[..seg_name.len()] == seg_name);
-        
-        match seg_index { //TODO: What is this doing...
+
+        match seg_index {
+            //TODO: What is this doing...
             Some(_) => {}
             None => return &"",
         }
 
         let seg = &self.segments[seg_index.unwrap()];
-        
+
         // Return the appropriate source reference
         match seg {
             // Short circuit for now
@@ -114,7 +127,8 @@ impl<'a> Message<'a> {
         }
     }
 
-    /// Access Segment, Field, or sub-field string references by string index
+    ///Access segment, field, or sub-field string references by passing a query string in dot notation.
+    ///See [`Self::query()`] for more information.
     pub fn query_by_string(&self, idx: String) -> &'a str {
         //TODO: Determine if we actually need this function... in what scenario are we passing a String in here rather an &str?
         self.query(idx.as_str())
@@ -151,6 +165,17 @@ impl<'a> Display for Message<'a> {
 
 impl<'a> Clone for Message<'a> {
     /// Creates a new cloned Message object referencing the same source slice as the original.
+    /// ## Example:
+    /// ```
+    /// # use rusthl7::Hl7ParseError;
+    /// # use rusthl7::message::Message;
+    /// # use std::convert::TryFrom;
+    /// # fn main() -> Result<(), Hl7ParseError> {
+    /// let m = Message::try_from("MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4")?;
+    /// let cloned = m.clone(); // this object is looking at the same string slice as m
+    /// # Ok(())
+    /// # }
+    /// ```
     fn clone(&self) -> Self {
         Message::try_from(self.source).unwrap()
     }

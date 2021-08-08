@@ -116,11 +116,12 @@ impl<'a> Index<&str> for GenericSegment<'a> {
 mod tests {
     use super::super::super::message::Message;
     use super::super::*;
+    use std::convert::TryFrom;
 
     #[test]
     fn ensure_numeric_index() {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
-        let msg = Message::from_str(hl7).unwrap();
+        let msg = Message::try_from(hl7).unwrap();
         let (f, c, s) = match &msg.segments[1] {
             Segment::Generic(x) => (x[1], x[(1, 1)], x[(1, 1, 0)]),
             _ => ("", "", ""),
@@ -133,7 +134,7 @@ mod tests {
     #[test]
     fn ensure_string_index() {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
-        let msg = Message::from_str(hl7).unwrap();
+        let msg = Message::try_from(hl7).unwrap();
         let (f, c, s, oob) = match &msg.segments[1] {
             Segment::Generic(x) => (
                 x[String::from("F1")],

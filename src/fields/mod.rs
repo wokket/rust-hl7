@@ -1,8 +1,7 @@
-use std::fmt::Display;
-use std::ops::Index;
 use super::separators::Separators;
 use super::*;
-
+use std::fmt::Display;
+use std::ops::Index;
 
 /// Represents a single field inside the HL7.  Note that fields can include repeats, components and sub-components.
 /// See [the spec](http://www.hl7.eu/HL7v2x/v251/std251/ch02.html#Heading13) for more info
@@ -29,6 +28,7 @@ impl<'a> Field<'a> {
             components,
             subcomponents,
         };
+
         Ok(field)
     }
 
@@ -104,9 +104,7 @@ impl<'a> Field<'a> {
     pub fn query_by_string(&self, idx: String) -> &'a str {
         &self.query(idx.as_str())
     }
-
 }
-
 
 impl<'a> Display for Field<'a> {
     /// Required for to_string() and other formatter consumers
@@ -114,7 +112,6 @@ impl<'a> Display for Field<'a> {
         write!(f, "{}", self.source)
     }
 }
-
 
 impl<'a> Clone for Field<'a> {
     /// Creates a new Message object using a clone of the original's source
@@ -128,8 +125,9 @@ impl<'a> Index<usize> for Field<'a> {
     type Output = &'a str;
     fn index(&self, idx: usize) -> &Self::Output {
         if idx > self.components.len() - 1 {
-            return &"";
+            return &""; //TODO: We're returning &&str here which doesn't seem right?!?
         }
+
         &self.components[idx]
     }
 }
@@ -139,8 +137,9 @@ impl<'a> Index<(usize, usize)> for Field<'a> {
     type Output = &'a str;
     fn index(&self, idx: (usize, usize)) -> &Self::Output {
         if idx.0 > self.components.len() - 1 || idx.1 > self.subcomponents[idx.0].len() - 1 {
-            return &"";
+            return &""; //TODO: We're returning &&str here which doesn't seem right?!?
         }
+
         &self.subcomponents[idx.0][idx.1]
     }
 }
@@ -256,6 +255,7 @@ mod tests {
     fn test_parse_components() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy"), &d).unwrap();
+
         assert_eq!(f.components.len(), 2)
     }
 
@@ -294,7 +294,7 @@ mod tests {
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
         let idx0 = String::from("R2");
         let oob = "R2.C3";
-        assert_eq!(f.query_by_string(idx0.clone()), "yyy&zzz");
+        assert_eq!(f.query_by_string(idx0), "yyy&zzz");
         assert_eq!(f.query("R2.C2"), "zzz");
         assert_eq!(f.query(oob), "");
     }

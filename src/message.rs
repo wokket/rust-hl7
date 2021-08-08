@@ -97,6 +97,14 @@ impl<'a> Message<'a> {
     pub fn as_str(&self) -> &'a str {
         self.source
     }
+
+    fn query(&self, idx: &str) -> &'a str {
+        self[idx]
+    }
+
+    fn query_by_string(&self, idx: String) -> &'a str {
+        self[idx]
+    }
 }
 
 impl<'a> Display for Message<'a> {

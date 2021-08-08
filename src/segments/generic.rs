@@ -172,7 +172,9 @@ mod tests {
                 x.query_by_string(String::from("F1")),
                 x.query_by_string(String::from("F1.R2")),
                 x.query_by_string(String::from("F1.R2.C1")),
-                String::from(x.query("F10")) + x.query("F1.R10") + x.query("F1.R2.C10"),
+                String::from(x.query("F10"))
+                    + x.query("F1.R10")
+                    + x.query("F1.R2.C10"),
             ),
             _ => ("", "", "", String::from("")),
         };

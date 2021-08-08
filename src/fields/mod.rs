@@ -1,7 +1,7 @@
-use super::separators::Separators;
-use super::*;
 use std::fmt::Display;
 use std::ops::Index;
+use super::separators::Separators;
+use super::*;
 
 /// Represents a single field inside the HL7.  Note that fields can include repeats, components and sub-components.
 /// See [the spec](http://www.hl7.eu/HL7v2x/v251/std251/ch02.html#Heading13) for more info
@@ -105,6 +105,7 @@ impl<'a> Field<'a> {
         &self.query(idx.as_str())
     }
 }
+
 
 impl<'a> Display for Field<'a> {
     /// Required for to_string() and other formatter consumers
@@ -294,7 +295,7 @@ mod tests {
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
         let idx0 = String::from("R2");
         let oob = "R2.C3";
-        assert_eq!(f.query_by_string(idx0), "yyy&zzz");
+        assert_eq!(f.query_by_string(idx0.clone()), "yyy&zzz");
         assert_eq!(f.query("R2.C2"), "zzz");
         assert_eq!(f.query(oob), "");
     }

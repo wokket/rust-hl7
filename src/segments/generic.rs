@@ -1,6 +1,6 @@
-use super::{fields::Field, separators::Separators, Hl7ParseError};
 use std::fmt::Display;
 use std::ops::Index;
+use super::{Hl7ParseError, fields::Field, separators::Separators};
 
 /// A generic bag o' fields, representing an arbitrary segment.
 #[derive(Debug, PartialEq, Clone)]
@@ -58,8 +58,9 @@ impl<'a> GenericSegment<'a> {
                 let idx: usize = stringnum.parse().unwrap();
                 let field = &self.fields[idx];
                 let query = sections[1..].join(".");
-
+                
                 field.query_by_string(query)
+
             }
         }
     }
@@ -107,6 +108,7 @@ impl<'a> Index<(usize, usize, usize)> for GenericSegment<'a> {
         &self.fields[fidx.0][(fidx.1, fidx.2)]
     }
 }
+
 impl<'a> Index<String> for GenericSegment<'a> {
     type Output = &'a str;
     /// Access Field as string reference

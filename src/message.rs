@@ -106,7 +106,7 @@ impl<'a> Message<'a> {
         match seg_index {
             //TODO: What is this doing...
             Some(_) => {}
-            None => return &"",
+            None => return "",
         }
 
         let seg = &self.segments[seg_index.unwrap()];
@@ -118,10 +118,10 @@ impl<'a> Message<'a> {
             // Parse out slice depth
             Segment::Generic(g) => {
                 if indices.len() < 2 {
-                    &g.source
+                    g.source
                 } else {
                     let query = indices[1..].join(".");
-                    &g.query_by_string(query)
+                    g.query(&*query)
                 }
             }
         }

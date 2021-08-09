@@ -12,7 +12,9 @@ pub struct GenericSegment<'a> {
 
 impl<'a> GenericSegment<'a> {
     /// Convert the given line of text into a GenericSegment.
-    pub fn parse(input: &'a str, delims: &Separators) -> Result<GenericSegment<'a>, Hl7ParseError> {
+    pub fn parse<S: Into<&'a str>>(input: S, delims: &Separators) -> Result<GenericSegment<'a>, Hl7ParseError> {
+        let input = input.into();
+        
         let fields: Result<Vec<Field<'a>>, Hl7ParseError> = input
             .split(delims.field)
             .map(|line| Field::parse(line, delims))
@@ -33,12 +35,15 @@ impl<'a> GenericSegment<'a> {
     }
 
     /// Access Segment, Field, or sub-field string references by string index
-    pub fn query_by_string(&self, idx: String) -> &'a str {
-        self.query(idx.as_str())
-    }
+  //  pub fn query_by_string(&self, idx: String) -> &'a str {
+  //      self.query(idx)
+  //  }
 
     /// Access Field as string reference
-    pub fn query(&self, fidx: &str) -> &'a str {
+    pub fn query<'b, S>(&self, fidx: S) -> &'a str 
+        where S: Into<&'b str> {
+
+        let fidx = fidx.into();
         let sections = fidx.split('.').collect::<Vec<&str>>();
 
         match sections.len() {
@@ -133,9 +138,9 @@ mod tests {
         let msg = Message::try_from(hl7).unwrap();
         let (f, c, s, oob) = match &msg.segments[1] {
             Segment::Generic(x) => (
-                x.query_by_string(String::from("F1")),
-                x.query_by_string(String::from("F1.R2")),
-                x.query_by_string(String::from("F1.R2.C1")),
+                x.query(&*String::from("F1")),
+                x.query(&*String::from("F1.R2")),
+                x.query(&*String::from("F1.R2.C1")),
                 String::from(x.query("F10")) + x.query("F1.R10") + x.query("F1.R2.C10"),
             ),
             _ => ("", "", "", String::from("")),

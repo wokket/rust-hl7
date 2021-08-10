@@ -15,7 +15,8 @@ pub struct Field<'a> {
 
 impl<'a> Field<'a> {
     /// Convert the given line of text into a field.
-    pub fn parse(input: &'a str, delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
+    pub fn parse<S: Into<&'a str>>(input: S, delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
+        let input = input.into();
         let components = input.split(delims.component).collect::<Vec<&'a str>>();
         let subcomponents = components
             .iter()
@@ -57,18 +58,23 @@ impl<'a> Field<'a> {
     }
 
     /// Compatibility method to get the underlying value of this field.
+    #[inline]
     pub fn value(&self) -> &'a str {
         self.source
     }
 
     /// Export value to str
+    #[inline]
     pub fn as_str(&self) -> &'a str {
         self.source
     }
 
     /// Access string reference of a Field component by String index
     /// Adjust the index by one as medical people do not count from zero
-    pub fn query(&self, sidx: &str) -> &'a str {
+    pub fn query<'b, S>(&self, sidx: S) -> &'a str
+        where S: Into<&'b str> {
+
+        let sidx = sidx.into();
         let parts = sidx.split('.').collect::<Vec<&str>>();
 
         if parts.len() == 1 {
@@ -98,11 +104,6 @@ impl<'a> Field<'a> {
         } else {
             ""
         }
-    }
-
-    /// Access Segment, Field, or sub-field string references by string index
-    pub fn query_by_string(&self, idx: String) -> &'a str {
-        &self.query(idx.as_str())
     }
 }
 
@@ -294,7 +295,7 @@ mod tests {
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
         let idx0 = String::from("R2");
         let oob = "R2.C3";
-        assert_eq!(f.query_by_string(idx0), "yyy&zzz");
+        assert_eq!(f.query(&*idx0), "yyy&zzz");
         assert_eq!(f.query("R2.C2"), "zzz");
         assert_eq!(f.query(oob), "");
     }

@@ -1,6 +1,7 @@
 pub mod generic;
 pub mod msh;
 
+use std::fmt::Display;
 use super::fields::Field;
 use super::separators::Separators;
 use super::*;
@@ -16,7 +17,9 @@ pub enum Segment<'a> {
 
 impl<'a> Segment<'a> {
     /// Convert the given line of text into a Segment.
-    pub fn parse(input: &'a str, delims: &Separators) -> Result<Segment<'a>, Hl7ParseError> {
+    pub fn parse<S: Into<&'a str>>(input: S, delims: &Separators) -> Result<Segment<'a>, Hl7ParseError> {
+        let input = input.into();
+
         let fields: Result<Vec<Field<'a>>, Hl7ParseError> = input
             .split(delims.field)
             .map(|line| Field::parse(line, delims))
@@ -41,7 +44,6 @@ impl<'a> Segment<'a> {
     }
 }
 
-use std::fmt::Display;
 impl<'a> Display for Segment<'a> {
     /// Required for to_string() and other formatter consumers
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

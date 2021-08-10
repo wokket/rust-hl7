@@ -74,7 +74,7 @@ impl<'a> Message<'a> {
         Ok(vecs)
     }
 
-    /// Returns the source string slice used to create this Message initially.
+    /// Returns the source string slice used to create this Message initially.  This method does not allocate.
     /// ## Example:
     /// ```
     /// # use rusthl7::Hl7ParseError;
@@ -87,12 +87,17 @@ impl<'a> Message<'a> {
     /// # Ok(())
     /// # }
     /// ```
+    #[inline]
     pub fn as_str(&self) -> &'a str {
         self.source
     }
 
     /// Access Segment, Field, or sub-field string references by string index
-    pub fn query(&self, idx: &str) -> &'a str {
+    pub fn query<'b, S>(&self, idx: S) -> &'a str 
+        where S: Into<&'b str> {
+
+        let idx = idx.into();
+
         // Parse index elements
         let indices: Vec<&str> = idx.split('.').collect();
         let seg_name = indices[0];
@@ -121,18 +126,12 @@ impl<'a> Message<'a> {
                     &g.source
                 } else {
                     let query = indices[1..].join(".");
-                    &g.query_by_string(query)
+                    &g.query(&*query)
                 }
             }
         }
     }
 
-    ///Access segment, field, or sub-field string references by passing a query string in dot notation.
-    ///See [`Self::query()`] for more information.
-    pub fn query_by_string(&self, idx: String) -> &'a str {
-        //TODO: Determine if we actually need this function... in what scenario are we passing a String in here rather an &str?
-        self.query(idx.as_str())
-    }
 }
 
 impl<'a> TryFrom<&'a str> for Message<'a> {
@@ -325,6 +324,7 @@ mod tests {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
         let msg = Message::try_from(hl7)?;
         assert_eq!(msg.query("OBR.F1.R2.C1"), "sub");
+        assert_eq!(msg.query(&*"OBR.F1.R2.C1".to_string()), "sub"); // Test the Into param with a String
         assert_eq!(msg[String::from("OBR.F1.R2.C1")], "sub");
         Ok(())
     }

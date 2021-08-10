@@ -137,7 +137,9 @@ impl<'a> Index<usize> for Message<'a> {
 impl<'a> Index<String> for Message<'a> {
     type Output = &'a str;
 
-    /// Access Segment, Field, or sub-field string references by string index
+    /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
+    #[allow(useless_deprecated)]
+    #[deprecated(note="This will be removed in a future version")]
     fn index(&self, idx: String) -> &Self::Output {
         // Parse index elements
         let indices: Vec<&str> = idx.split('.').collect();
@@ -171,7 +173,9 @@ impl<'a> Index<String> for Message<'a> {
 impl<'a> Index<&str> for Message<'a> {
     type Output = &'a str;
 
-    /// Access Segment, Field, or sub-field string references by string index
+    /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
+    #[allow(useless_deprecated)]
+    #[deprecated(note="This will be removed in a future version")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }

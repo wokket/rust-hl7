@@ -106,7 +106,9 @@ impl<'a> Index<String> for GenericSegment<'a> {
 impl<'a> Index<&str> for GenericSegment<'a> {
     type Output = &'a str;
 
-    /// Access Segment, Field, or sub-field string references by string index
+    /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
+    #[allow(useless_deprecated)]
+    #[deprecated(note="This will be removed in a future version")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }

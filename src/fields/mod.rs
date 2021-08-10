@@ -102,8 +102,10 @@ impl<'a> Index<(usize, usize)> for Field<'a> {
     }
 }
 
-/// Access string reference of a Field component by String index
+/// DEPRECATED. Access string reference of a Field component by String index
 /// Adjust the index by one as medical people do not count from zero
+#[allow(useless_deprecated)]
+#[deprecated(note="This will be removed in a future version")]
 impl<'a> Index<String> for Field<'a> {
     type Output = &'a str;
     fn index(&self, sidx: String) -> &Self::Output {
@@ -142,7 +144,9 @@ impl<'a> Index<String> for Field<'a> {
 impl<'a> Index<&str> for Field<'a> {
     type Output = &'a str;
 
-    /// Access Segment, Field, or sub-field string references by string index
+    /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
+    #[allow(useless_deprecated)]
+    #[deprecated(note="This will be removed in a future version")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }

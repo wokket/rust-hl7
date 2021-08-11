@@ -15,7 +15,10 @@ pub struct Field<'a> {
 
 impl<'a> Field<'a> {
     /// Convert the given line of text into a field.
-    pub fn parse<S: Into<&'a str>>(input: S, delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
+    pub fn parse<S: Into<&'a str>>(
+        input: S,
+        delims: &Separators,
+    ) -> Result<Field<'a>, Hl7ParseError> {
         let input = input.into();
         let components = input.split(delims.component).collect::<Vec<&'a str>>();
         let subcomponents = components
@@ -72,8 +75,9 @@ impl<'a> Field<'a> {
     /// Access string reference of a Field component by String index
     /// Adjust the index by one as medical people do not count from zero
     pub fn query<'b, S>(&self, sidx: S) -> &'a str
-        where S: Into<&'b str> {
-
+    where
+        S: Into<&'b str>,
+    {
         let sidx = sidx.into();
         let parts = sidx.split('.').collect::<Vec<&str>>();
 
@@ -84,7 +88,7 @@ impl<'a> Field<'a> {
                 .collect::<String>();
             let idx: usize = stringnums.parse().unwrap();
 
-            &self[idx - 1]
+            self[idx - 1]
         } else if parts.len() == 2 {
             let stringnums = parts[0]
                 .chars()
@@ -100,7 +104,7 @@ impl<'a> Field<'a> {
 
             let idx1: usize = stringnums.parse().unwrap();
 
-            &self[(idx0 - 1, idx1 - 1)]
+            self[(idx0 - 1, idx1 - 1)]
         } else {
             ""
         }
@@ -148,7 +152,7 @@ impl<'a> Index<(usize, usize)> for Field<'a> {
 /// DEPRECATED. Access string reference of a Field component by String index
 /// Adjust the index by one as medical people do not count from zero
 #[allow(useless_deprecated)]
-#[deprecated(note="This will be removed in a future version")]
+#[deprecated(note = "This will be removed in a future version")]
 impl<'a> Index<String> for Field<'a> {
     type Output = &'a str;
     fn index(&self, sidx: String) -> &Self::Output {
@@ -189,7 +193,7 @@ impl<'a> Index<&str> for Field<'a> {
 
     /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
     #[allow(useless_deprecated)]
-    #[deprecated(note="This will be removed in a future version")]
+    #[deprecated(note = "This will be removed in a future version")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }

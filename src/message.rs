@@ -93,9 +93,10 @@ impl<'a> Message<'a> {
     }
 
     /// Access Segment, Field, or sub-field string references by string index
-    pub fn query<'b, S>(&self, idx: S) -> &'a str 
-        where S: Into<&'b str> {
-
+    pub fn query<'b, S>(&self, idx: S) -> &'a str
+    where
+        S: Into<&'b str>,
+    {
         let idx = idx.into();
 
         // Parse index elements
@@ -111,7 +112,7 @@ impl<'a> Message<'a> {
         match seg_index {
             //TODO: What is this doing...
             Some(_) => {}
-            None => return &"",
+            None => return "",
         }
 
         let seg = &self.segments[seg_index.unwrap()];
@@ -119,19 +120,18 @@ impl<'a> Message<'a> {
         // Return the appropriate source reference
         match seg {
             // Short circuit for now
-            Segment::MSH(m) => &m.source,
+            Segment::MSH(m) => m.source,
             // Parse out slice depth
             Segment::Generic(g) => {
                 if indices.len() < 2 {
-                    &g.source
+                    g.source
                 } else {
                     let query = indices[1..].join(".");
-                    &g.query(&*query)
+                    g.query(&*query)
                 }
             }
         }
     }
-
 }
 
 impl<'a> TryFrom<&'a str> for Message<'a> {
@@ -204,7 +204,7 @@ impl<'a> Index<String> for Message<'a> {
 
     /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
     #[allow(useless_deprecated)]
-    #[deprecated(note="This will be removed in a future version")]
+    #[deprecated(note = "This will be removed in a future version")]
     fn index(&self, idx: String) -> &Self::Output {
         // Parse index elements
         let indices: Vec<&str> = idx.split('.').collect();
@@ -240,7 +240,7 @@ impl<'a> Index<&str> for Message<'a> {
 
     /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
     #[allow(useless_deprecated)]
-    #[deprecated(note="This will be removed in a future version")]
+    #[deprecated(note = "This will be removed in a future version")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }

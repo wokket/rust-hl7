@@ -38,7 +38,10 @@ pub struct MshSegment<'a> {
 }
 
 impl<'a> MshSegment<'a> {
-    pub fn parse<S: Into<&'a str>>(input: S, delims: &Separators) -> Result<MshSegment<'a>, Hl7ParseError> {
+    pub fn parse<S: Into<&'a str>>(
+        input: S,
+        delims: &Separators,
+    ) -> Result<MshSegment<'a>, Hl7ParseError> {
         let input = input.into();
 
         let mut fields = input.split(delims.field);

@@ -12,7 +12,10 @@ pub struct GenericSegment<'a> {
 
 impl<'a> GenericSegment<'a> {
     /// Convert the given line of text into a GenericSegment.
-    pub fn parse<S: Into<&'a str>>(input: S, delims: &Separators) -> Result<GenericSegment<'a>, Hl7ParseError> {
+    pub fn parse<S: Into<&'a str>>(
+        input: S,
+        delims: &Separators,
+    ) -> Result<GenericSegment<'a>, Hl7ParseError> {
         let input = input.into();
 
         let fields: Result<Vec<Field<'a>>, Hl7ParseError> = input
@@ -37,8 +40,9 @@ impl<'a> GenericSegment<'a> {
 
     /// Access Field as string reference
     pub fn query<'b, S>(&self, fidx: S) -> &'a str
-        where S: Into<&'b str> {
-
+    where
+        S: Into<&'b str>,
+    {
         let fidx = fidx.into();
         let sections = fidx.split('.').collect::<Vec<&str>>();
 
@@ -49,7 +53,7 @@ impl<'a> GenericSegment<'a> {
                     .filter(|c| c.is_digit(10))
                     .collect::<String>();
                 let idx: usize = stringnum.parse().unwrap();
-                &self[idx]
+                self[idx]
             }
             _ => {
                 let stringnum = sections[0]
@@ -140,7 +144,7 @@ impl<'a> Index<&str> for GenericSegment<'a> {
 
     /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
     #[allow(useless_deprecated)]
-    #[deprecated(note="This will be removed in a future version")]
+    #[deprecated(note = "This will be removed in a future version")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }
@@ -171,8 +175,8 @@ mod tests {
         let msg = Message::try_from(hl7).unwrap();
         let (f, c, s, oob) = match &msg.segments[1] {
             Segment::Generic(x) => (
-                x.query("F1"), //&str
-                x.query("F1.R2"), // &str
+                x.query("F1"),                       //&str
+                x.query("F1.R2"),                    // &str
                 x.query(&*String::from("F1.R2.C1")), //String
                 String::from(x.query("F10")) + x.query("F1.R10") + x.query("F1.R2.C10"),
             ),

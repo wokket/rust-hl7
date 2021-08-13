@@ -1,6 +1,7 @@
 use super::fields::Field;
 use super::separators::Separators;
 use super::*;
+use std::fmt::Display;
 
 /// The most important Segment, almost all HL7 messages have an MSH (MLLP simple ack I'm looking at you).
 /// Given the importance of this segment for driving application behaviour, it gets the special treatment
@@ -37,7 +38,12 @@ pub struct MshSegment<'a> {
 }
 
 impl<'a> MshSegment<'a> {
-    pub fn parse(input: &'a str, delims: &Separators) -> Result<MshSegment<'a>, Hl7ParseError> {
+    pub fn parse<S: Into<&'a str>>(
+        input: S,
+        delims: &Separators,
+    ) -> Result<MshSegment<'a>, Hl7ParseError> {
+        let input = input.into();
+
         let mut fields = input.split(delims.field);
 
         assert!(fields.next().unwrap() == "MSH");
@@ -71,6 +77,7 @@ impl<'a> MshSegment<'a> {
     }
 
     /// Export source to str
+    #[inline]
     pub fn as_str(&self) -> &'a str {
         self.source
     }
@@ -82,7 +89,6 @@ impl<'a> MshSegment<'a> {
     }
 }
 
-use std::fmt::Display;
 impl<'a> Display for MshSegment<'a> {
     /// Required for to_string() and other formatter consumers
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -91,7 +97,7 @@ impl<'a> Display for MshSegment<'a> {
 }
 
 impl<'a> Clone for MshSegment<'a> {
-    /// Creates a new Message object using a clone of the original's source
+    /// Creates a new Message object using _the same source_ slice as the original.
     fn clone(&self) -> Self {
         let delims = self.msh_2_encoding_characters;
         MshSegment::parse(self.source, &delims).unwrap()
@@ -143,7 +149,7 @@ mod tests {
 
         let msh = MshSegment::parse(hl7, &delims)?;
         let gen = msh.as_generic().unwrap();
-        assert_eq!("ELAB-3", gen["F3"]);
+        assert_eq!("ELAB-3", gen.query("F3"));
         Ok(())
     }
 

@@ -1,6 +1,6 @@
-use super::fields::Field;
-use super::separators::Separators;
-use super::*;
+use super::{fields::Field, separators::Separators, Hl7ParseError};
+use std::fmt::Display;
+use std::ops::Index;
 
 /// A generic bag o' fields, representing an arbitrary segment.
 #[derive(Debug, PartialEq, Clone)]
@@ -12,7 +12,12 @@ pub struct GenericSegment<'a> {
 
 impl<'a> GenericSegment<'a> {
     /// Convert the given line of text into a GenericSegment.
-    pub fn parse(input: &'a str, delims: &Separators) -> Result<GenericSegment<'a>, Hl7ParseError> {
+    pub fn parse<S: Into<&'a str>>(
+        input: S,
+        delims: &Separators,
+    ) -> Result<GenericSegment<'a>, Hl7ParseError> {
+        let input = input.into();
+
         let fields: Result<Vec<Field<'a>>, Hl7ParseError> = input
             .split(delims.field)
             .map(|line| Field::parse(line, delims))
@@ -28,12 +33,43 @@ impl<'a> GenericSegment<'a> {
     }
 
     /// Export source to str
+    #[inline]
     pub fn as_str(&self) -> &'a str {
         self.source
     }
+
+    /// Access Field as string reference
+    pub fn query<'b, S>(&self, fidx: S) -> &'a str
+    where
+        S: Into<&'b str>,
+    {
+        let fidx = fidx.into();
+        let sections = fidx.split('.').collect::<Vec<&str>>();
+
+        match sections.len() {
+            1 => {
+                let stringnum = sections[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnum.parse().unwrap();
+                self[idx]
+            }
+            _ => {
+                let stringnum = sections[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnum.parse().unwrap();
+                let field = &self.fields[idx];
+                let query = sections[1..].join(".");
+
+                field.query(&*query)
+            }
+        }
+    }
 }
 
-use std::fmt::Display;
 impl<'a> Display for GenericSegment<'a> {
     /// Required for to_string() and other formatter consumers
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -41,7 +77,6 @@ impl<'a> Display for GenericSegment<'a> {
     }
 }
 
-use std::ops::Index;
 impl<'a> Index<usize> for GenericSegment<'a> {
     type Output = &'a str;
     /// Access Field as string reference
@@ -77,6 +112,7 @@ impl<'a> Index<(usize, usize, usize)> for GenericSegment<'a> {
         &self.fields[fidx.0][(fidx.1, fidx.2)]
     }
 }
+
 impl<'a> Index<String> for GenericSegment<'a> {
     type Output = &'a str;
     /// Access Field as string reference
@@ -108,7 +144,7 @@ impl<'a> Index<&str> for GenericSegment<'a> {
 
     /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
     #[allow(useless_deprecated)]
-    #[deprecated(note="This will be removed in a future version")]
+    #[deprecated(note = "This will be removed in a future version")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }
@@ -139,12 +175,10 @@ mod tests {
         let msg = Message::try_from(hl7).unwrap();
         let (f, c, s, oob) = match &msg.segments[1] {
             Segment::Generic(x) => (
-                x[String::from("F1")],
-                x[String::from("F1.R2")],
-                x[String::from("F1.R2.C1")],
-                String::from(x[String::from("F10")])
-                    + x[String::from("F1.R10")]
-                    + x[String::from("F1.R2.C10")],
+                x.query("F1"),                       //&str
+                x.query("F1.R2"),                    // &str
+                x.query(&*String::from("F1.R2.C1")), //String
+                String::from(x.query("F10")) + x.query("F1.R10") + x.query("F1.R2.C10"),
             ),
             _ => ("", "", "", String::from("")),
         };

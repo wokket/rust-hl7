@@ -74,9 +74,63 @@ impl<'a> Message<'a> {
         Ok(vecs)
     }
 
-    /// Export source to str
+    /// Returns the source string slice used to create this Message initially.  This method does not allocate.
+    /// ## Example:
+    /// ```
+    /// # use rusthl7::Hl7ParseError;
+    /// # use rusthl7::message::Message;
+    /// # use std::convert::TryFrom;
+    /// # fn main() -> Result<(), Hl7ParseError> {
+    /// let source = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
+    /// let m = Message::try_from(source)?;
+    /// assert_eq!(source, m.as_str());
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
     pub fn as_str(&self) -> &'a str {
         self.source
+    }
+
+    /// Access Segment, Field, or sub-field string references by string index
+    pub fn query<'b, S>(&self, idx: S) -> &'a str
+    where
+        S: Into<&'b str>,
+    {
+        let idx = idx.into();
+
+        // Parse index elements
+        let indices: Vec<&str> = idx.split('.').collect();
+        let seg_name = indices[0];
+        // Find our first segment without offending the borow checker
+
+        let seg_index = self
+            .segments
+            .iter()
+            .position(|r| &r.as_str()[..seg_name.len()] == seg_name);
+
+        match seg_index {
+            //TODO: What is this doing...
+            Some(_) => {}
+            None => return "",
+        }
+
+        let seg = &self.segments[seg_index.unwrap()];
+
+        // Return the appropriate source reference
+        match seg {
+            // Short circuit for now
+            Segment::MSH(m) => m.source,
+            // Parse out slice depth
+            Segment::Generic(g) => {
+                if indices.len() < 2 {
+                    g.source
+                } else {
+                    let query = indices[1..].join(".");
+                    g.query(&*query)
+                }
+            }
+        }
     }
 }
 
@@ -110,6 +164,17 @@ impl<'a> Display for Message<'a> {
 
 impl<'a> Clone for Message<'a> {
     /// Creates a new cloned Message object referencing the same source slice as the original.
+    /// ## Example:
+    /// ```
+    /// # use rusthl7::Hl7ParseError;
+    /// # use rusthl7::message::Message;
+    /// # use std::convert::TryFrom;
+    /// # fn main() -> Result<(), Hl7ParseError> {
+    /// let m = Message::try_from("MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4")?;
+    /// let cloned = m.clone(); // this object is looking at the same string slice as m
+    /// # Ok(())
+    /// # }
+    /// ```
     fn clone(&self) -> Self {
         Message::try_from(self.source).unwrap()
     }
@@ -139,7 +204,7 @@ impl<'a> Index<String> for Message<'a> {
 
     /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
     #[allow(useless_deprecated)]
-    #[deprecated(note="This will be removed in a future version")]
+    #[deprecated(note = "This will be removed in a future version")]
     fn index(&self, idx: String) -> &Self::Output {
         // Parse index elements
         let indices: Vec<&str> = idx.split('.').collect();
@@ -175,7 +240,7 @@ impl<'a> Index<&str> for Message<'a> {
 
     /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
     #[allow(useless_deprecated)]
-    #[deprecated(note="This will be removed in a future version")]
+    #[deprecated(note = "This will be removed in a future version")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }
@@ -258,6 +323,8 @@ mod tests {
     fn ensure_index() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
         let msg = Message::try_from(hl7)?;
+        assert_eq!(msg.query("OBR.F1.R2.C1"), "sub");
+        assert_eq!(msg.query(&*"OBR.F1.R2.C1".to_string()), "sub"); // Test the Into param with a String
         assert_eq!(msg[String::from("OBR.F1.R2.C1")], "sub");
         Ok(())
     }

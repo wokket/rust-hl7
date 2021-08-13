@@ -1,9 +1,11 @@
 use super::separators::Separators;
 use super::*;
+use std::fmt::Display;
+use std::ops::Index;
+
 /// Represents a single field inside the HL7.  Note that fields can include repeats, components and sub-components.
 /// See [the spec](http://www.hl7.eu/HL7v2x/v251/std251/ch02.html#Heading13) for more info
 #[derive(Debug, PartialEq)]
-
 pub struct Field<'a> {
     pub source: &'a str,
     pub delims: Separators,
@@ -13,7 +15,11 @@ pub struct Field<'a> {
 
 impl<'a> Field<'a> {
     /// Convert the given line of text into a field.
-    pub fn parse(input: &'a str, delims: &Separators) -> Result<Field<'a>, Hl7ParseError> {
+    pub fn parse<S: Into<&'a str>>(
+        input: S,
+        delims: &Separators,
+    ) -> Result<Field<'a>, Hl7ParseError> {
+        let input = input.into();
         let components = input.split(delims.component).collect::<Vec<&'a str>>();
         let subcomponents = components
             .iter()
@@ -26,10 +32,11 @@ impl<'a> Field<'a> {
             components,
             subcomponents,
         };
+
         Ok(field)
     }
 
-    /// Used to hide the removal of NoneError for #2...  If passed `Some()` value it retursn a field with that value.  If passed `None() it returns an `Err(Hl7ParseError::MissingRequiredValue{})`
+    /// Used to hide the removal of NoneError for #2...  If passed `Some()` value it returns a field with that value.  If passed `None() it returns an `Err(Hl7ParseError::MissingRequiredValue{})`
     pub fn parse_mandatory(
         input: Option<&'a str>,
         delims: &Separators,
@@ -54,17 +61,56 @@ impl<'a> Field<'a> {
     }
 
     /// Compatibility method to get the underlying value of this field.
+    #[inline]
     pub fn value(&self) -> &'a str {
         self.source
     }
 
     /// Export value to str
+    #[inline]
     pub fn as_str(&self) -> &'a str {
         self.source
     }
+
+    /// Access string reference of a Field component by String index
+    /// Adjust the index by one as medical people do not count from zero
+    pub fn query<'b, S>(&self, sidx: S) -> &'a str
+    where
+        S: Into<&'b str>,
+    {
+        let sidx = sidx.into();
+        let parts = sidx.split('.').collect::<Vec<&str>>();
+
+        if parts.len() == 1 {
+            let stringnums = parts[0]
+                .chars()
+                .filter(|c| c.is_digit(10))
+                .collect::<String>();
+            let idx: usize = stringnums.parse().unwrap();
+
+            self[idx - 1]
+        } else if parts.len() == 2 {
+            let stringnums = parts[0]
+                .chars()
+                .filter(|c| c.is_digit(10))
+                .collect::<String>();
+
+            let idx0: usize = stringnums.parse().unwrap();
+
+            let stringnums = parts[1]
+                .chars()
+                .filter(|c| c.is_digit(10))
+                .collect::<String>();
+
+            let idx1: usize = stringnums.parse().unwrap();
+
+            self[(idx0 - 1, idx1 - 1)]
+        } else {
+            ""
+        }
+    }
 }
 
-use std::fmt::Display;
 impl<'a> Display for Field<'a> {
     /// Required for to_string() and other formatter consumers
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -72,7 +118,6 @@ impl<'a> Display for Field<'a> {
     }
 }
 
-use std::ops::Index;
 impl<'a> Clone for Field<'a> {
     /// Creates a new Message object using a clone of the original's source
     fn clone(&self) -> Self {
@@ -85,8 +130,9 @@ impl<'a> Index<usize> for Field<'a> {
     type Output = &'a str;
     fn index(&self, idx: usize) -> &Self::Output {
         if idx > self.components.len() - 1 {
-            return &"";
+            return &""; //TODO: We're returning &&str here which doesn't seem right?!?
         }
+
         &self.components[idx]
     }
 }
@@ -96,8 +142,9 @@ impl<'a> Index<(usize, usize)> for Field<'a> {
     type Output = &'a str;
     fn index(&self, idx: (usize, usize)) -> &Self::Output {
         if idx.0 > self.components.len() - 1 || idx.1 > self.subcomponents[idx.0].len() - 1 {
-            return &"";
+            return &""; //TODO: We're returning &&str here which doesn't seem right?!?
         }
+
         &self.subcomponents[idx.0][idx.1]
     }
 }
@@ -105,7 +152,7 @@ impl<'a> Index<(usize, usize)> for Field<'a> {
 /// DEPRECATED. Access string reference of a Field component by String index
 /// Adjust the index by one as medical people do not count from zero
 #[allow(useless_deprecated)]
-#[deprecated(note="This will be removed in a future version")]
+#[deprecated(note = "This will be removed in a future version")]
 impl<'a> Index<String> for Field<'a> {
     type Output = &'a str;
     fn index(&self, sidx: String) -> &Self::Output {
@@ -146,7 +193,7 @@ impl<'a> Index<&str> for Field<'a> {
 
     /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
     #[allow(useless_deprecated)]
-    #[deprecated(note="This will be removed in a future version")]
+    #[deprecated(note = "This will be removed in a future version")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }
@@ -213,6 +260,7 @@ mod tests {
     fn test_parse_components() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy"), &d).unwrap();
+
         assert_eq!(f.components.len(), 2)
     }
 
@@ -250,10 +298,9 @@ mod tests {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
         let idx0 = String::from("R2");
-        let idx1 = String::from("R2.C2");
-        let oob = String::from("R2.C3");
-        assert_eq!(f[idx0.clone()], "yyy&zzz");
-        assert_eq!(f[idx1], "zzz");
-        assert_eq!(f[oob], "");
+        let oob = "R2.C3";
+        assert_eq!(f.query(&*idx0), "yyy&zzz");
+        assert_eq!(f.query("R2.C2"), "zzz");
+        assert_eq!(f.query(oob), "");
     }
 }

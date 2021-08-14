@@ -5,7 +5,6 @@ use crate::separators::Separators;
 use std::borrow::Cow;
 
 pub struct EscapeSequence {
-    delims: Separators,
     escape_buf: [u8; 1],
     field_buf: [u8; 1],
     repeat_buf: [u8; 1],
@@ -24,8 +23,7 @@ impl<'a> EscapeSequence {
         .unwrap();
 
         let mut return_val = EscapeSequence {
-            delims,
-            escape_buf: [0; 1], // TODO: Does the spec allow multi-byte delim chars??
+            escape_buf: [0; 1], // The spec specifically requires single byte (actually 7-bit ASCII) delim chars
             field_buf: [0; 1],
             repeat_buf: [0; 1],
             component_buf: [0; 1],
@@ -33,6 +31,7 @@ impl<'a> EscapeSequence {
             escape_regex: regex,
         };
 
+        // We need &str to inject into the output buffer, convert the `Char` here
         let _bytes = delims.escape_char.encode_utf8(&mut return_val.escape_buf);
         let _bytes = delims.field.encode_utf8(&mut return_val.field_buf);
         let _bytes = delims.repeat.encode_utf8(&mut return_val.repeat_buf);
@@ -98,7 +97,7 @@ impl<'a> EscapeSequence {
                 debug!("Found first escape char at {}", first);
 
                 while i < input.len() {
-                    let start_of_sequence = input[i..].find(self.delims.escape_char);
+                    let start_of_sequence = self.escape_regex.find(&input[i..]);
                     if start_of_sequence.is_none() {
                         // there's nothing left to process, no more backslashes in the rest of the buffer
 
@@ -107,10 +106,10 @@ impl<'a> EscapeSequence {
                         break; // break out of while loop
                     }
 
-                    let start_index = start_of_sequence.unwrap() + i; // index is offset into input by i chars as that's what's we subsliced above
+                    let start_index = start_of_sequence.unwrap().start() + i; // index is offset into input by i chars as that's what's we subsliced above
                     trace!("Found the next escape char at {}", start_index);
 
-                    let end_of_sequence = input[start_index + 1..].find(self.delims.escape_char);
+                    let end_of_sequence = self.escape_regex.find(&input[start_index + 1..]);
 
                     if end_of_sequence.is_none() {
                         // there's nothing left to process, the backslash we are curently looking at is NOT an escape sequence
@@ -120,7 +119,7 @@ impl<'a> EscapeSequence {
                     }
 
                     // else we have found another escape char, get the slice in between
-                    let end_index = end_of_sequence.unwrap() + start_index + 1; // the end is the number of chars after the start_index, not from the start of input
+                    let end_index = end_of_sequence.unwrap().start() + start_index + 1; // the end is the number of chars after the start_index, not from the start of input
                     trace!("Found end of sequence at {}", end_index);
 
                     let sequence = &input[start_index + 1..end_index];

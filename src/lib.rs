@@ -1,3 +1,4 @@
+pub mod decoder;
 pub mod fields;
 pub mod message;
 pub mod segments;

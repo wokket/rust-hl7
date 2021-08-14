@@ -11,7 +11,12 @@ repository = "https://github.com/wokket/rust-hl7/"
 name="rusthl7"
 path="src/lib.rs"
 
+[features]
+# Enables decoding of escape sequences for full HL7 compliance.  If you know you **absolutely** don't need this then you can disable the feature for a small performance improvement.
+escape-sequence = []
+
 [dependencies]
+regex = "1.5"
 thiserror = "1.0"
 
 [dev-dependencies]
@@ -19,4 +24,8 @@ criterion = "0.3"
 
 [[bench]]
 name = "simple_parse"
+harness = false
+
+[[bench]]
+name = "decoder"
 harness = false

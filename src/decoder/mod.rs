@@ -140,7 +140,13 @@ impl<'a> EscapeSequence {
                             self.delims.subcomponent
                         );
                         output.extend_from_slice(&self.subcomponent_buf);
-                    }
+                    },
+
+                    // Highlighted/Normal text sequences need to remain for consuming libraries to act on as they see fit
+                    "H" => output.extend_from_slice(r#"\H\"#.as_bytes()),
+                    "N" => output.extend_from_slice(r#"\N\"#.as_bytes()),
+
+
                     // TODO: Add more sequences here
                     _ => {
                         // not a known sequence, must just be two backslashes randomly in a string
@@ -262,5 +268,15 @@ mod tests {
         let input = r#"Escape this \T\ please"#;
         let output = escaper.decode(input);
         assert_eq!(output, "Escape this & please");
+    }
+
+    #[test]
+    fn ensure_decode_ignores_highlighting_sequence() {
+        let delims = Separators::default();
+        let escaper = EscapeSequence::new(delims);
+
+        let input = r#"Don't escape this \H\highlighted text\N\ please"#;
+        let output = escaper.decode(input);
+        assert_eq!(output, input);
     }
 }

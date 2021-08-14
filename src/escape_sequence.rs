@@ -50,7 +50,7 @@ impl<'a> EscapeSequence {
     ///
     /// ## Example:
     /// ```
-    /// # use rusthl7::decoder::EscapeSequence;
+    /// # use rusthl7::escape_sequence::EscapeSequence;
     /// # use rusthl7::separators::Separators;
     /// let delims = Separators::default();
     /// let decoder = EscapeSequence::new(delims);

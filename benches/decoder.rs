@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use rusthl7::{decoder::*, separators::Separators};
+use rusthl7::{escape_sequence::*, separators::Separators};
 
 // Note that we;re calkling decode on a whole message here, although it would normally be on an individual field...
 // this is just to make it work a bit harder on a larger dataset, not because it makes sense in a HL7 sense

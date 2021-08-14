@@ -1,4 +1,4 @@
-pub mod decoder;
+pub mod escape_sequence;
 pub mod fields;
 pub mod message;
 pub mod segments;

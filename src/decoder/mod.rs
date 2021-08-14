@@ -1,22 +1,5 @@
-/*!
-    This module contains the decoding functionality to parse escape sequences from the source string back to their original chars.
-
-    For more info see [here](https://www.lyniate.com/knowledge-hub/hl7-escape-sequences/) or [here](https://confluence.hl7australia.com/display/OOADRM20181/Appendix+1+Parsing+HL7v2#Appendix1ParsingHL7v2-Dealingwithreservedcharactersanddelimiters)
-
-    ## Details
-
-    This decoder will replace some, ** but not all ** of the standard HL7 escape sequences.  Specifically, the following sequences are **NOT** replaced:
-    - `\H\` - Indicates the start of highlighted text, this is a consuming application problem and will not be replaced
-    - `\N\` - Indicates the end of highlighted text and resumption of normal text.  This is a consuming application problem and will not be replaced
-    - `\Z...\` - Custom application escape sequences, these are custom (as are most `Z` items in HL7) and will not be replaced
-
-    Also, not all of the sequences that _should_ be replaced are currently being handled, specifically:
-    - `\E\`,`\F\`, '\R\`, `\S\`, `\T\` are all handledm and replaced with the Escape, Field, Repeat, Component and Sub-Componnet delimiter chars respectively
-    - `\Cxxyy\`, '\Mxxyyzz\, '\Xdd..\` _should_ be handled, but aren't currently.
-
-*/
-
 use log::{debug, trace};
+use regex::Regex;
 
 use crate::separators::Separators;
 use std::borrow::Cow;
@@ -28,17 +11,28 @@ pub struct EscapeSequence {
     repeat_buf: [u8; 1],
     component_buf: [u8; 1],
     subcomponent_buf: [u8; 1],
+
+    escape_regex : Regex
 }
 
 impl<'a> EscapeSequence {
     pub fn new(delims: Separators) -> EscapeSequence {
+        
+
+        let regex = if delims.escape_char == '\\' {
+            Regex::new(r#"\\"#) // needs special handling because backslashes have meaning in regexes, and need to be escaped
+        } else {
+            Regex::new(String::from(delims.escape_char).as_str()) //everything else just works (I hope!)
+        }.unwrap();
+        
         let mut return_val = EscapeSequence {
             delims,
-            escape_buf: [0; 1],
-            field_buf: [0; 1], // TODO: Does the spec allow multi-byte delim chars??
+            escape_buf: [0; 1], // TODO: Does the spec allow multi-byte delim chars??
+            field_buf: [0; 1], 
             repeat_buf: [0; 1],
             component_buf: [0; 1],
             subcomponent_buf: [0; 1],
+            escape_regex: regex,
         };
 
         let _bytes = delims.escape_char.encode_utf8(&mut return_val.escape_buf);
@@ -52,6 +46,24 @@ impl<'a> EscapeSequence {
         return_val
     }
 
+
+    /// This module contains the decoding functionality to parse escape sequences from the source string back to their original chars.
+    ///
+    /// For more info see [here](https://www.lyniate.com/knowledge-hub/hl7-escape-sequences/) or [here](https://confluence.hl7australia.com/display/OOADRM20181/Appendix+1+Parsing+HL7v2#Appendix1ParsingHL7v2-Dealingwithreservedcharactersanddelimiters)
+    ///
+    /// ## Details
+    ///
+    /// This decoder will replace some, ** but not all ** of the standard HL7 escape sequences.  Specifically, the following sequences are **NOT** replaced:
+    /// - `\H\` - Indicates the start of highlighted text, this is a consuming application problem and will not be replaced
+    /// - `\N\` - Indicates the end of highlighted text and resumption of normal text.  This is a consuming application problem and will not be replaced
+    /// - `\Z...\` - Custom application escape sequences, these are custom (as are most `Z` items in HL7) and will not be replaced
+    ///
+    /// Also, not all of the sequences that _should_ be replaced are currently being handled, specifically:
+    /// - `\E\`,`\F\`, '\R\`, `\S\`, `\T\` are all handledm and replaced with the Escape, Field, Repeat, Component and Sub-Componnet delimiter chars respectively
+    /// - `\Cxxyy\`, '\Mxxyyzz\, '\Xdd..\` _should_ be handled, but aren't currently.  There's [some suggestion](https://confluence.hl7australia.com/display/OOADRM20181/Appendix+1+Parsing+HL7v2#Appendix1ParsingHL7v2-Unicodecharacters) that these are discouraged in lieu of html-escaped values
+    /// 
+    /// If there's _no possibility_ of escape sequences (because there's no escape characters, typically backspaces) in the value, this function short circuits as early as possible and returns the original string slice 
+    /// for optimum performance.
     pub fn decode<S>(&self, input: S) -> Cow<'a, str>
     where
         S: Into<Cow<'a, str>>,
@@ -60,15 +72,12 @@ impl<'a> EscapeSequence {
         // the reality is any reference to "backslash" is actually referencing the escape char in the MSH segemnt, and stored in `self.delims.escape_char`
 
         let input = input.into();
-        let first = input.find(self.delims.escape_char);
+        let first = self.escape_regex.find(&input); //using `regex.find` here is about twice as fast for the 'no sequences' benchmark as using &str.find()...
 
         if let Some(first) = first {
+            let first = first.start();
+
             // We know there's a backslash, so we need to process stuff
-
-            // I wanted to use regex as a simple(ish) if slow(ish) way to get started with this, but the requirement for a dynamic escaping char (typically `\`)
-            // which may/may not need doubling up for regex interpretation reasons is making that harder...
-
-            // Reverting to a simple string iter() and managing state from there
 
             // we're going to be replacing (mainly) 3 char escape sequences (eg `\F\`) with a single char sequence (eg `|`) so the initial length of the input should be sufficient
             let mut output: Vec<u8> = Vec::with_capacity(input.len());
@@ -112,41 +121,15 @@ impl<'a> EscapeSequence {
                 output.extend_from_slice(input[i..start_index].as_bytes());
 
                 match sequence {
-                    "E" => {
-                        trace!(
-                            "Replacing Escape sequence with '{}'",
-                            self.delims.escape_char
-                        );
-                        output.extend_from_slice(&self.escape_buf);
-                    }
-                    "F" => {
-                        trace!("Replacing Field sequence with '{}'", self.delims.field);
-                        output.extend_from_slice(&self.field_buf);
-                    }
-                    "R" => {
-                        trace!("Replacing Repeat sequence with '{}'", self.delims.repeat);
-                        output.extend_from_slice(&self.repeat_buf);
-                    }
-                    "S" => {
-                        trace!(
-                            "Replacing Component sequence with '{}'",
-                            self.delims.component
-                        );
-                        output.extend_from_slice(&self.component_buf);
-                    }
-                    "T" => {
-                        trace!(
-                            "Replacing Sub-Component sequence with '{}'",
-                            self.delims.subcomponent
-                        );
-                        output.extend_from_slice(&self.subcomponent_buf);
-                    },
+                    "E" => output.extend_from_slice(&self.escape_buf),
+                    "F" => output.extend_from_slice(&self.field_buf),
+                    "R" => output.extend_from_slice(&self.repeat_buf),
+                    "S" => output.extend_from_slice(&self.component_buf),
+                    "T" => output.extend_from_slice(&self.subcomponent_buf),
 
                     // Highlighted/Normal text sequences need to remain for consuming libraries to act on as they see fit
                     "H" => output.extend_from_slice(r#"\H\"#.as_bytes()),
                     "N" => output.extend_from_slice(r#"\N\"#.as_bytes()),
-
-
                     // TODO: Add more sequences here
                     _ => {
                         // not a known sequence, must just be two backslashes randomly in a string
@@ -265,9 +248,9 @@ mod tests {
         let delims = Separators::default();
         let escaper = EscapeSequence::new(delims);
 
-        let input = r#"Escape this \T\ please"#;
+        let input = r#"Obstetrician \T\ Gynaecologist"#;
         let output = escaper.decode(input);
-        assert_eq!(output, "Escape this & please");
+        assert_eq!(output, "Obstetrician & Gynaecologist");
     }
 
     #[test]

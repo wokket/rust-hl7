@@ -17,6 +17,7 @@ escape-sequence = []
 
 [dependencies]
 log = "0.4"
+regex = "1.5"
 thiserror = "1.0"
 
 [dev-dependencies]

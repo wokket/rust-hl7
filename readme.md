@@ -5,10 +5,11 @@
 
 Totally kind of like production ready!
 
-The first cut was intended to parse from a multiline text blob into a tree of string slices, representing all the different facets of info.
 This second cut provides consistent structure down to the sub-sub-field, efficient accessors to shared string reference data, with standardized implementations of common functionality.
 
-Interpreting these facets (type conversion, determining which fields they represent etc) is a future problem.
+Interpreting these facets (type conversion, determining which fields they represent etc) is a future problem... there is **no plan whatsoever** for message conformance checks or anything of that nature.
+
+This library is trying to provide the _tooling_ you need to build robust HL7 based systems, without dictating _how_ you go about it.  There's no one-size-fits-all here, so we try to provide a box of separate tools rather than a full framework.
 
 ### Intended Features and Design Notes:
 - [x] Initially use hl7 default separator chars
@@ -21,7 +22,6 @@ Interpreting these facets (type conversion, determining which fields they repres
     - [x] Decoding of the most common escape sequences including `\E\`, `\R\`, `\S\` & `\T\`
     - [x] Correctly passes through `\H\`, `\N\` and custom `\Z..\` sequences unchanged
     - [ ] Support for various unicode sequences (`\C..\`, `\M..\`, `\X..\`)
-    - [ ] Integrate decoding automatically into values returned from the library via an opt-out crate feature
 - [ ] Add tighter MSH as an exception to the above
 - [ ] The above allows us to parse everything as strings, and provide helper methods for type conversions as required.
 - [x] Parse a message using a `TryFrom<&str>` impl rather than a dedicated parser

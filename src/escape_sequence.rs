@@ -4,6 +4,34 @@ use regex::Regex;
 use crate::separators::Separators;
 use std::borrow::Cow;
 
+/// This struct provides the decoding functionality to parse escape sequences from the source string back to their original chars.
+///
+/// For more info see [here](https://www.lyniate.com/knowledge-hub/hl7-escape-sequences/) or [here](https://confluence.hl7australia.com/display/OOADRM20181/Appendix+1+Parsing+HL7v2#Appendix1ParsingHL7v2-Dealingwithreservedcharactersanddelimiters)
+///
+/// ## Example:
+/// ```
+/// # use rusthl7::escape_sequence::EscapeSequence;
+/// # use rusthl7::separators::Separators;
+/// let delims = Separators::default();
+/// let decoder = EscapeSequence::new(delims);
+/// let hl7_field_value = r#"Obstetrician \T\ Gynaecologist"#;
+/// let decoded = decoder.decode(hl7_field_value);
+/// assert_eq!(decoded, r#"Obstetrician & Gynaecologist"#);
+/// ```
+///
+/// ## Details
+///
+/// This decoder will replace some, **but not all** of the standard HL7 escape sequences. `\E\`,`\F\`, '\R\`, `\S\`, `\T\` are all handled, and replaced with the Escape, Field, Repeat, Component and Sub-Component separator chars respectively
+/// 
+/// The following sequences are **NOT** replaced by design and will be left in the string:
+/// - `\H\` Indicates the start of highlighted text, this is a consuming application problem and will not be replaced.
+/// - `\N\` Indicates the end of highlighted text and resumption of normal text.  This is a consuming application problem and will not be replaced.
+/// - `\Z...\` Custom application escape sequences, these are custom (as are most `Z` items in HL7) and will not be replaced.
+///
+/// Also, not all of the sequences that _should_ be replaced are currently being handled, specifically:
+/// /// - `\Cxxyy\`, '\Mxxyyzz\, '\Xdd..\` _should_ be handled, but aren't currently.  There's [some suggestion](https://confluence.hl7australia.com/display/OOADRM20181/Appendix+1+Parsing+HL7v2#Appendix1ParsingHL7v2-Unicodecharacters) that these are discouraged in lieu of html-escaped values
+///
+/// If there's _no possibility_ of escape sequences (because there's no escape characters, typically backslashes) in the value, this function short circuits as early as possible and returns the original string slice for optimum performance.
 pub struct EscapeSequence {
     escape_buf: [u8; 1],
     field_buf: [u8; 1],
@@ -14,6 +42,11 @@ pub struct EscapeSequence {
 }
 
 impl<'a> EscapeSequence {
+    /// Create a new struct ready for processing of escape sequences.
+    /// Escape sequences in HL7 are dependent on the actual delimiters used _for that message_, and so we need a [Separators] instance to know what chars we're working with.
+    ///
+    /// Creating a new [EscapeSequence] does involve some non-trivial work in order to improve the performance of the `decode()` operations.  It's expected that instances of this struct will be cached
+    /// per message, or per sending application if it will always use the same separators, or for the lifetime of the process if you're only dealing with known (often default) separators.
     pub fn new(delims: Separators) -> EscapeSequence {
         let regex = if delims.escape_char == '\\' {
             Regex::new(r#"\\"#) // needs special handling because backslashes have meaning in regexes, and need to be escaped
@@ -43,34 +76,7 @@ impl<'a> EscapeSequence {
         return_val
     }
 
-    /// This module contains the decoding functionality to parse escape sequences from the source string back to their original chars.
-    ///
-    /// For more info see [here](https://www.lyniate.com/knowledge-hub/hl7-escape-sequences/) or [here](https://confluence.hl7australia.com/display/OOADRM20181/Appendix+1+Parsing+HL7v2#Appendix1ParsingHL7v2-Dealingwithreservedcharactersanddelimiters)
-    ///
-    /// ## Example:
-    /// ```
-    /// # use rusthl7::escape_sequence::EscapeSequence;
-    /// # use rusthl7::separators::Separators;
-    /// let delims = Separators::default();
-    /// let decoder = EscapeSequence::new(delims);
-    /// let hl7_field_value = r#"Obstetrician \T\ Gynaecologist"#;
-    /// let decoded = decoder.decode(hl7_field_value);
-    /// assert_eq!(decoded, r#"Obstetrician & Gynaecologist"#);
-    /// ```
-    ///
-    /// ## Details
-    ///
-    /// This decoder will replace some, ** but not all ** of the standard HL7 escape sequences.  Specifically, the following sequences are **NOT** replaced:
-    /// - `\H\` - Indicates the start of highlighted text, this is a consuming application problem and will not be replaced
-    /// - `\N\` - Indicates the end of highlighted text and resumption of normal text.  This is a consuming application problem and will not be replaced
-    /// - `\Z...\` - Custom application escape sequences, these are custom (as are most `Z` items in HL7) and will not be replaced
-    ///
-    /// Also, not all of the sequences that _should_ be replaced are currently being handled, specifically:
-    /// - `\E\`,`\F\`, '\R\`, `\S\`, `\T\` are all handled, and replaced with the Escape, Field, Repeat, Component and Sub-Component delimiter chars respectively
-    /// - `\Cxxyy\`, '\Mxxyyzz\, '\Xdd..\` _should_ be handled, but aren't currently.  There's [some suggestion](https://confluence.hl7australia.com/display/OOADRM20181/Appendix+1+Parsing+HL7v2#Appendix1ParsingHL7v2-Unicodecharacters) that these are discouraged in lieu of html-escaped values
-    ///
-    /// If there's _no possibility_ of escape sequences (because there's no escape characters, typically backspaces) in the value, this function short circuits as early as possible and returns the original string slice
-    /// for optimum performance.
+    /// This is where the magic happens.  Call this to update any escape sequences in the given &str.
     pub fn decode<S>(&self, input: S) -> Cow<'a, str>
     where
         S: Into<Cow<'a, str>>,
@@ -161,9 +167,7 @@ impl<'a> EscapeSequence {
                         }
                     }
 
-                    i = end_index; // move through buffer, we we've covered everything up to this point now
-
-                    i += 1;
+                    i = end_index + 1; // move through buffer, we we've covered everything up to this point now
                 } // while more chars in input to loop through
 
                 Cow::Owned(String::from_utf8(output).unwrap())

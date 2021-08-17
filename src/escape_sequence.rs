@@ -21,7 +21,9 @@ use std::borrow::Cow;
 ///
 /// ## Details
 ///
-/// This decoder will replace some, **but not all** of the standard HL7 escape sequences. `\E\`,`\F\`, '\R\`, `\S\`, `\T\` are all handled, and replaced with the Escape, Field, Repeat, Component and Sub-Component separator chars respectively
+/// This decoder will replace some, **but not all** of the standard HL7 escape sequences. 
+/// - `\E\`,`\F\`, '\R\`, `\S\`, `\T\` are all handled, and replaced with the Escape, Field, Repeat, Component and Sub-Component separator chars respectively
+/// - `\X..\` hexidecimal erscape sequences are supported (2 hex digits per char)
 /// 
 /// The following sequences are **NOT** replaced by design and will be left in the string:
 /// - `\H\` Indicates the start of highlighted text, this is a consuming application problem and will not be replaced.
@@ -29,7 +31,7 @@ use std::borrow::Cow;
 /// - `\Z...\` Custom application escape sequences, these are custom (as are most `Z` items in HL7) and will not be replaced.
 ///
 /// Also, not all of the sequences that _should_ be replaced are currently being handled, specifically:
-/// /// - `\Cxxyy\`, '\Mxxyyzz\, '\Xdd..\` _should_ be handled, but aren't currently.  There's [some suggestion](https://confluence.hl7australia.com/display/OOADRM20181/Appendix+1+Parsing+HL7v2#Appendix1ParsingHL7v2-Unicodecharacters) that these are discouraged in lieu of html-escaped values
+/// /// - `\Cxxyy\`, '\Mxxyyzz\ arguably _should_ be handled, but aren't currently.  There's [some suggestion](https://confluence.hl7australia.com/display/OOADRM20181/Appendix+1+Parsing+HL7v2#Appendix1ParsingHL7v2-Unicodecharacters) that these are discouraged in lieu of html-escaped values
 ///
 /// If there's _no possibility_ of escape sequences (because there's no escape characters, typically backslashes) in the value, this function short circuits as early as possible and returns the original string slice for optimum performance.
 pub struct EscapeSequence {

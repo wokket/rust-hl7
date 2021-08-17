@@ -21,7 +21,8 @@ This library is trying to provide the _tooling_ you need to build robust HL7 bas
 - [-] Add support for [HL7 escape sequences](https://www.lyniate.com/knowledge-hub/hl7-escape-sequences/) ([#22](https://github.com/wokket/rust-hl7/issues/22))
     - [x] Decoding of the most common escape sequences including `\E\`, `\R\`, `\S\` & `\T\`
     - [x] Correctly passes through `\H\`, `\N\` and custom `\Z..\` sequences unchanged
-    - [ ] Support for various unicode sequences (`\C..\`, `\M..\`, `\X..\`)
+    - [X] Decodes `\X..\` sequences for hex-encoded chars
+    - [ ] Support for various unicode sequences (`\C..\`, `\M..\`).  These are lower priority as [HL7 Australia considers them deprecated](https://confluence.hl7australia.com/display/OO/3+Datatypes#id-3Datatypes-3.1.1.6EscapesequencessupportingmultiplecharactersetsforFT,ST,andTXdatatypes)
 - [ ] Add tighter MSH as an exception to the above
 - [ ] The above allows us to parse everything as strings, and provide helper methods for type conversions as required.
 - [x] Parse a message using a `TryFrom<&str>` impl rather than a dedicated parser

@@ -2,6 +2,7 @@
 
 ## 0.5.0
  - Add `query` functions to replace the string based `Index` impls in the version version.  These are functionally identical to the string `Index` implementations, but avoid some lifetime issues (returning `&&str`) and have visible documentation.
+ - Add `EscapeSequence` struct to support decoding [escape sequences](https://www.lyniate.com/knowledge-hub/hl7-escape-sequences/) back to their original values.
 
 ## 0.4.0
  - Large change (thanks @sempervictus) to allow querying of message content by both numerical indexer and dot-notation string indexers

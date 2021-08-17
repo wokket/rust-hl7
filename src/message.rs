@@ -12,6 +12,7 @@ use std::ops::Index;
 pub struct Message<'a> {
     pub source: &'a str,
     pub segments: Vec<Segment<'a>>,
+    separators: Separators
 }
 
 impl<'a> Message<'a> {
@@ -92,6 +93,11 @@ impl<'a> Message<'a> {
         self.source
     }
 
+    /// Gets the delimiter information for this Message
+    pub fn get_separators(&self) -> Separators {
+        self.separators
+    }
+
     /// Access Segment, Field, or sub-field string references by string index
     pub fn query<'b, S>(&self, idx: S) -> &'a str
     where
@@ -150,6 +156,7 @@ impl<'a> TryFrom<&'a str> for Message<'a> {
         let msg = Message {
             source,
             segments: segments?,
+            separators: delimiters
         };
 
         Ok(msg)

@@ -150,10 +150,16 @@ impl<'a> EscapeSequence {
 
                         _ => {
                             if sequence.starts_with('Z') {
-                                println!("Into custom escape sequence, ignoring...");
+                                trace!("Into custom escape sequence, ignoring...");
                                 output.extend_from_slice(&self.escape_buf);
                                 output.extend_from_slice(sequence.as_bytes());
                                 output.extend_from_slice(&self.escape_buf);
+
+                            } else if sequence.starts_with('X') {
+                                let hex_code = &sequence[1..];
+                                let hex = hex::decode(hex_code).expect("Unable to parse X-value into valid hex");
+                                println!("Converted hex code {} to {:?}", hex_code, hex);
+                                output.extend_from_slice(&hex);
 
                             // TODO: Add more sequences
                             } else {
@@ -194,6 +200,26 @@ mod tests {
         let input = "There are no escape sequences here/there/.";
         let output = escaper.decode(input);
         assert_eq!(output, input);
+    }
+
+    #[test]
+    fn test_decode_handles_simple_x_codes() {
+        let delims = Separators::default();
+        let escaper = EscapeSequence::new(delims);
+
+        let input = "Escape sequence with \\X0D\\.";
+        let output = escaper.decode(input);
+        assert_eq!(output, "Escape sequence with \r.");
+    }
+
+    #[test]
+    fn test_decode_handles_multi_byte_x_codes() {
+        let delims = Separators::default();
+        let escaper = EscapeSequence::new(delims);
+
+        let input = "Sentence 1.\\X0D0A\\Sentence 2.";
+        let output = escaper.decode(input);
+        assert_eq!(output, "Sentence 1.\r\nSentence 2.");
     }
 
     #[test]

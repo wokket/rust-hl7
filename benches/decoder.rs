@@ -15,6 +15,18 @@ fn no_sequences(c: &mut Criterion) {
     });
 }
 
+// We expect creation to be a little slower, as we init the regexes to make decode() calls faster
+// Amortizing this cost across multiple calls makes sense if we're caching the struct
+fn create_struct(c: &mut Criterion) {
+    c.bench_function("Create struct", |b| {
+        let delims = Separators::default();
+        
+        b.iter(|| {
+            let _ = EscapeSequence::new(delims);
+        })
+    });
+}
+
 fn no_sequences_but_backslash(c: &mut Criterion) {
     c.bench_function("No Escape Sequences But Backslash", |b| {
         let delims = Separators::default();
@@ -54,6 +66,7 @@ fn get_sample_message_with_escape_sequences() -> &'static str {
 
 criterion_group!(
     decoder,
+    create_struct,
     no_sequences,
     no_sequences_but_backslash,
     has_escape_sequences

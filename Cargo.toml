@@ -12,6 +12,7 @@ name="rusthl7"
 path="src/lib.rs"
 
 [dependencies]
+hex = "0.4"
 log = "0.4"
 regex = "1.5"
 thiserror = "1.0"

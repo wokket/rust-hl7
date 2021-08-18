@@ -16,6 +16,20 @@ pub struct Message<'a> {
 }
 
 impl<'a> Message<'a> {
+    pub fn new(source: &'a str) -> Message<'a> {
+        let delimiters = str::parse::<Separators>(source);
+        let delimiters = delimiters.unwrap();
+        let segments: Vec<Segment<'a>> = source
+            .split(delimiters.segment)
+            .map(|line| Segment::parse(line, &delimiters).unwrap())
+            .collect();
+
+        Message {
+            source,
+            segments: segments,
+            separators: delimiters
+        }
+    }
     /// Extracts header element for external use
     pub fn msh(&self) -> Result<MshSegment, Hl7ParseError> {
         let seg = self
@@ -256,6 +270,17 @@ mod tests {
         assert_eq!(msg.to_string(), String::from(hl7));
         Ok(())
     }
+
+    #[test]
+    fn ensure_message_creation() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
+        let msg0 = Message::try_from(hl7)?;
+        let msg1 = Message::new(hl7);
+
+        assert_eq!(msg0, msg1);
+        Ok(())
+    }
+
     #[cfg(feature = "string_index")]
     mod string_index_tests {
         use super::*;

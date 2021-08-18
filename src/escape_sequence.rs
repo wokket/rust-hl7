@@ -21,10 +21,10 @@ use std::borrow::Cow;
 ///
 /// ## Details
 ///
-/// This decoder will replace some, **but not all** of the standard HL7 escape sequences. 
+/// This decoder will replace some, **but not all** of the standard HL7 escape sequences.
 /// - `\E\`,`\F\`, '\R\`, `\S\`, `\T\` are all handled, and replaced with the Escape, Field, Repeat, Component and Sub-Component separator chars respectively
 /// - `\X..\` hexidecimal erscape sequences are supported (2 hex digits per char)
-/// 
+///
 /// The following sequences are **NOT** replaced by design and will be left in the string:
 /// - `\H\` Indicates the start of highlighted text, this is a consuming application problem and will not be replaced.
 /// - `\N\` Indicates the end of highlighted text and resumption of normal text.  This is a consuming application problem and will not be replaced.
@@ -156,10 +156,10 @@ impl<'a> EscapeSequence {
                                 output.extend_from_slice(&self.escape_buf);
                                 output.extend_from_slice(sequence.as_bytes());
                                 output.extend_from_slice(&self.escape_buf);
-
                             } else if sequence.starts_with('X') {
                                 let hex_code = &sequence[1..];
-                                let hex = hex::decode(hex_code).expect("Unable to parse X-value into valid hex");
+                                let hex = hex::decode(hex_code)
+                                    .expect("Unable to parse X-value into valid hex");
                                 println!("Converted hex code {} to {:?}", hex_code, hex);
                                 output.extend_from_slice(&hex);
 

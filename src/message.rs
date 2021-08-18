@@ -1,4 +1,4 @@
-use super::segments::*;
+use super::segments::{Segment, MshSegment};
 use super::separators::Separators;
 use super::*;
 use std::convert::TryFrom;
@@ -17,56 +17,32 @@ pub struct Message<'a> {
 
 impl<'a> Message<'a> {
     /// Extracts header element for external use
-    pub fn msh(&self) -> Result<&msh::MshSegment, Hl7ParseError> {
-        let segment = self
+    pub fn msh(&self) -> Result<MshSegment, Hl7ParseError> {
+        let seg = self
             .segments
             .iter()
-            .find_map(|s| match s {
-                segments::Segment::MSH(x) => Some(x),
-                _ => None,
-            })
-            .expect("Failed to find hl7 header");
+            .find(|s| s.fields[0].source == "MSH" ).unwrap();
+        let segment = MshSegment::parse(seg.source, &self.separators)
+            .expect("Failed to parse MSH segment");
         Ok(segment)
     }
 
-    /// Extracts all generic elements for external use
-    pub fn generic_segments(&self) -> Result<Vec<&generic::GenericSegment>, Hl7ParseError> {
-        let generics: Vec<&generic::GenericSegment> = self
-            .segments
-            .iter()
-            .filter_map(|s| match s {
-                segments::Segment::Generic(x) => Some(x),
-                _ => None,
-            })
-            .collect();
-        Ok(generics)
-    }
-
     /// Extracts generic elements for external use by matching first field to name
-    pub fn generic_segments_by_name(
+    pub fn segments_by_name(
         &self,
         name: &str,
-    ) -> Result<Vec<&generic::GenericSegment>, Hl7ParseError> {
-        let found: Vec<&generic::GenericSegment> = self
+    ) -> Result<Vec<&Segment<'a>>, Hl7ParseError> {
+        let found: Vec<&Segment<'a>> = self
             .segments
             .iter()
-            .filter_map(|s| match s {
-                segments::Segment::Generic(x) => {
-                    if x.fields.first().unwrap().value() == name {
-                        Some(x)
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            })
+            .filter(|s| s.fields[0].source == name )
             .collect();
         Ok(found)
     }
 
     /// Present input vectors of &generics to vectors of &str
     pub fn segments_to_str_vecs(
-        segments: Vec<&generic::GenericSegment<'a>>,
+        segments: Vec<&Segment<'a>>,
     ) -> Result<Vec<Vec<&'a str>>, Hl7ParseError> {
         let vecs = segments
             .iter()
@@ -109,33 +85,17 @@ impl<'a> Message<'a> {
         let indices: Vec<&str> = idx.split('.').collect();
         let seg_name = indices[0];
         // Find our first segment without offending the borow checker
-
         let seg_index = self
             .segments
             .iter()
-            .position(|r| &r.as_str()[..seg_name.len()] == seg_name);
-
-        match seg_index {
-            //TODO: What is this doing...
-            Some(_) => {}
-            None => return "",
-        }
-
-        let seg = &self.segments[seg_index.unwrap()];
-
-        // Return the appropriate source reference
-        match seg {
-            // Short circuit for now
-            Segment::MSH(m) => m.source,
-            // Parse out slice depth
-            Segment::Generic(g) => {
-                if indices.len() < 2 {
-                    g.source
-                } else {
-                    let query = indices[1..].join(".");
-                    g.query(&*query)
-                }
-            }
+            .position(|r| &r.as_str()[..seg_name.len()] == seg_name)
+            .expect("Segment not found");
+        let seg = &self.segments[seg_index];
+        if indices.len() < 2 {
+            seg.source
+        } else {
+            let query = indices[1..].join(".");
+            seg.query(&*query)
         }
     }
 }
@@ -195,14 +155,7 @@ impl<'a> Index<usize> for Message<'a> {
         if idx > self.segments.len() {
             return &"";
         }
-        let seg = &self.segments[idx];
-        // Return the appropriate source reference
-        match seg {
-            // Short circuit for now
-            Segment::MSH(m) => &m.source,
-            // Parse out slice depth
-            Segment::Generic(g) => &g.source,
-        }
+        &self.segments[idx].source
     }
 }
 #[cfg(feature = "string_index")]
@@ -219,24 +172,13 @@ impl<'a> Index<String> for Message<'a> {
         let seg_index = self
             .segments
             .iter()
-            .position(|r| &r.as_str()[..seg_name.len()] == seg_name);
-        match seg_index {
-            Some(_) => {}
-            None => return &"",
-        }
-        let seg = &self.segments[seg_index.unwrap()];
-        // Return the appropriate source reference
-        match seg {
-            // Short circuit for now
-            Segment::MSH(m) => &m.source,
-            // Parse out slice depth
-            Segment::Generic(g) => {
-                if indices.len() < 2 {
-                    &g.source
-                } else {
-                    &g[indices[1..].join(".")]
-                }
-            }
+            .position(|r| &r.as_str()[..seg_name.len()] == seg_name)
+            .expect("Segment not found");
+        let seg = &self.segments[seg_index];
+        if indices.len() < 2 {
+            &seg.source
+        } else {
+            &seg[indices[1..].join(".")]
         }
     }
 }
@@ -256,7 +198,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ensure_segments_are_added() -> Result<(), Hl7ParseError> {
+    fn ensure_segments_are_returned() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
         let msg = Message::try_from(hl7)?;
 
@@ -265,20 +207,11 @@ mod tests {
     }
 
     #[test]
-    fn ensure_generic_segments_are_returned() -> Result<(), Hl7ParseError> {
+    fn ensure_segments_are_found() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
         let msg = Message::try_from(hl7)?;
 
-        assert_eq!(msg.generic_segments().unwrap().len(), 1);
-        Ok(())
-    }
-
-    #[test]
-    fn ensure_generic_segments_are_found() -> Result<(), Hl7ParseError> {
-        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
-        let msg = Message::try_from(hl7)?;
-
-        assert_eq!(msg.generic_segments_by_name("OBR").unwrap().len(), 1);
+        assert_eq!(msg.segments_by_name("OBR").unwrap().len(), 1);
         Ok(())
     }
 
@@ -294,7 +227,7 @@ mod tests {
     fn ensure_segments_convert_to_vectors() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
         let msg = Message::try_from(hl7)?;
-        let segs = msg.generic_segments_by_name("OBR")?;
+        let segs = msg.segments_by_name("OBR")?;
         let sval = segs.first().unwrap().fields.first().unwrap().value();
         let vecs = Message::segments_to_str_vecs(segs).unwrap();
         let vval = vecs.first().unwrap().first().unwrap();
@@ -333,6 +266,7 @@ mod tests {
             assert_eq!(msg.query("OBR.F1.R2.C1"), "sub");
             assert_eq!(msg.query(&*"OBR.F1.R2.C1".to_string()), "sub"); // Test the Into param with a String
             assert_eq!(msg[String::from("OBR.F1.R2.C1")], "sub");
+            assert_eq!(msg["MSH.F3"], "ELAB-3");
             Ok(())
         }
     }

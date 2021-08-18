@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use rusthl7::{message::*, segments::Segment};
+use rusthl7::{message::*, segments::Segment, segments::MshSegment};
 use std::convert::TryFrom;
 
 fn get_sample_message() -> &'static str {
@@ -19,7 +19,7 @@ fn get_segments_by_name(c: &mut Criterion) {
         let m = Message::try_from(get_sample_message()).unwrap();
 
         b.iter(|| {
-            let _segs = m.generic_segments_by_name("OBR").unwrap();
+            let _segs = m.segments_by_name("OBR").unwrap();
             //assert!(segs.len() == 1);
         })
     });
@@ -31,11 +31,14 @@ fn get_msh_and_read_field(c: &mut Criterion) {
 
         b.iter(|| {
             let seg = m.segments.first();
-
-            if let Some(Segment::MSH(msh)) = seg {
-                let _app = msh.msh_3_sending_application.as_ref().unwrap(); // direct variable access
-                                                                            //println!("{}", _app.value());
-            }
+            let msh = m.msh();
+            match msh {
+                Ok(m) => {
+                    let _app =  m.msh_3_sending_application.as_ref().unwrap(); // direct variable access
+                     //println!("{}", _app.value());
+                },
+                Hl7ParseError => panic!("Failed to parse MSH")
+            };
         })
     });
 }
@@ -45,12 +48,9 @@ fn get_pid_and_read_field_via_vec(c: &mut Criterion) {
         let m = Message::try_from(get_sample_message()).unwrap();
 
         b.iter(|| {
-            let seg = &m.segments[1];
-
-            if let Segment::Generic(pid) = seg {
-                let _field = pid[3];
-                assert_eq!(_field, "555-44-4444"); // lookup from vec
-            }
+            let pid = &m.segments[1];
+            let _field = pid[3];
+            assert_eq!(_field, "555-44-4444"); // lookup from vec
         })
     });
 }
@@ -66,6 +66,30 @@ fn get_pid_and_read_field_via_query(c: &mut Criterion) {
     });
 }
 
+#[cfg(feature = "string_index")]
+fn get_pid_and_read_field_via_index(c: &mut Criterion) {
+    c.bench_function("Read Field from PID (index)", |b| {
+        let m = Message::try_from(get_sample_message()).unwrap();
+
+        b.iter(|| {
+            let _val = m["PID.F3"]; // query via Message
+            assert_eq!(_val, "555-44-4444"); // lookup from vec
+        })
+    });
+}
+
+#[cfg(feature = "string_index")]
+criterion_group!(
+    benches,
+    message_parse,
+    get_segments_by_name,
+    get_msh_and_read_field,
+    get_pid_and_read_field_via_vec,
+    get_pid_and_read_field_via_query,
+    get_pid_and_read_field_via_index
+);
+
+#[cfg(not(feature = "string_index"))]
 criterion_group!(
     benches,
     message_parse,

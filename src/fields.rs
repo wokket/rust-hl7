@@ -41,8 +41,10 @@ impl<'a> Field<'a> {
     }
 
     /// Convenience method to check whether Field is a single data element or broken out into multiple internally
+    // Not used internally - marked to allow dead code as a result
+    #[allow(dead_code)]
     fn is_subdivided(&self) -> bool {
-        self.components.len() > 1
+        self.components.len() > 1 || self.subcomponents[0].len() > 1
     }
 
     /// Used to hide the removal of NoneError for #2...  If passed `Some()` value it returns a field with that value.  If passed `None() it returns an `Err(Hl7ParseError::MissingRequiredValue{})`
@@ -300,6 +302,17 @@ mod tests {
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
         assert_eq!(f[1], "yyy&zzz");
         assert_eq!(f[(1, 1)], "zzz");
+    }
+
+    #[test]
+    fn test_is_subdivided() {
+        let d = Separators::default();
+        let f0 = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
+        let f1 = Field::parse_mandatory(Some("yyy&zzz"), &d).unwrap();
+        let f2 = Field::parse_mandatory(Some("xxx"), &d).unwrap();
+        assert_eq!(f0.is_subdivided(), true);
+        assert_eq!(f1.is_subdivided(), true);
+        assert_eq!(f2.is_subdivided(), false);
     }
 
     #[cfg(feature = "string_index")]

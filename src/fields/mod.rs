@@ -149,12 +149,12 @@ impl<'a> Index<(usize, usize)> for Field<'a> {
     }
 }
 
-/// DEPRECATED. Access string reference of a Field component by String index
-/// Adjust the index by one as medical people do not count from zero
-#[allow(useless_deprecated)]
-#[deprecated(note = "This will be removed in a future version")]
+/// Access string reference of a Field component by String index
+#[cfg(feature = "string_index")]
 impl<'a> Index<String> for Field<'a> {
     type Output = &'a str;
+
+    #[cfg(feature = "string_index")]
     fn index(&self, sidx: String) -> &Self::Output {
         let parts = sidx.split('.').collect::<Vec<&str>>();
 
@@ -188,12 +188,12 @@ impl<'a> Index<String> for Field<'a> {
     }
 }
 
+#[cfg(feature = "string_index")]
 impl<'a> Index<&str> for Field<'a> {
     type Output = &'a str;
 
-    /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
-    #[allow(useless_deprecated)]
-    #[deprecated(note = "This will be removed in a future version")]
+    /// Access Segment, Field, or sub-field string references by string index
+    #[cfg(feature = "string_index")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }
@@ -293,14 +293,18 @@ mod tests {
         assert_eq!(f[(1, 1)], "zzz");
     }
 
-    #[test]
-    fn test_string_index() {
-        let d = Separators::default();
-        let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
-        let idx0 = String::from("R2");
-        let oob = "R2.C3";
-        assert_eq!(f.query(&*idx0), "yyy&zzz");
-        assert_eq!(f.query("R2.C2"), "zzz");
-        assert_eq!(f.query(oob), "");
+    #[cfg(feature = "string_index")]
+    mod string_index_tests {
+        use super::*;
+        #[test]
+        fn test_string_index() {
+            let d = Separators::default();
+            let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
+            let idx0 = String::from("R2");
+            let oob = "R2.C3";
+            assert_eq!(f.query(&*idx0), "yyy&zzz");
+            assert_eq!(f.query("R2.C2"), "zzz");
+            assert_eq!(f.query(oob), "");
+        }
     }
 }

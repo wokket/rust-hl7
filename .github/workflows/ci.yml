@@ -19,6 +19,6 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --verbose --features string_index
     - name: Run Benchmarks
-      run: cargo bench
+      run: cargo bench --features string_index

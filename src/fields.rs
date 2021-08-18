@@ -20,7 +20,9 @@ impl<'a> Field<'a> {
         delims: &Separators,
     ) -> Result<Field<'a>, Hl7ParseError> {
         let input = input.into();
-        let components: Vec<&'a str> = input.split(delims.component).collect::<Vec<&'a str>>()
+        let components: Vec<&'a str> = input
+            .split(delims.component)
+            .collect::<Vec<&'a str>>()
             .iter()
             .map(|c| c.split(delims.repeat).collect::<Vec<&'a str>>())
             .flatten()
@@ -36,6 +38,11 @@ impl<'a> Field<'a> {
             subcomponents,
         };
         Ok(field)
+    }
+
+    /// Convenience method to check whether Field is a single data element or broken out into multiple internally
+    fn is_subdivided(&self) -> bool {
+        self.components.len() > 1
     }
 
     /// Used to hide the removal of NoneError for #2...  If passed `Some()` value it returns a field with that value.  If passed `None() it returns an `Err(Hl7ParseError::MissingRequiredValue{})`
@@ -127,9 +134,9 @@ impl<'a> Clone for Field<'a> {
     }
 }
 
-/// Access string reference of a Field component by numeric index
 impl<'a> Index<usize> for Field<'a> {
     type Output = &'a str;
+    /// Access string reference of a Field component by numeric index
     fn index(&self, idx: usize) -> &Self::Output {
         if idx > self.components.len() - 1 {
             return &""; //TODO: We're returning &&str here which doesn't seem right?!?
@@ -139,9 +146,9 @@ impl<'a> Index<usize> for Field<'a> {
     }
 }
 
-/// Access string reference of a Field subcomponent by numeric index
 impl<'a> Index<(usize, usize)> for Field<'a> {
     type Output = &'a str;
+    /// Access string reference of a Field subcomponent by numeric index
     fn index(&self, idx: (usize, usize)) -> &Self::Output {
         if idx.0 > self.components.len() - 1 || idx.1 > self.subcomponents[idx.0].len() - 1 {
             return &""; //TODO: We're returning &&str here which doesn't seem right?!?
@@ -151,11 +158,11 @@ impl<'a> Index<(usize, usize)> for Field<'a> {
     }
 }
 
-/// Access string reference of a Field component by String index
 #[cfg(feature = "string_index")]
 impl<'a> Index<String> for Field<'a> {
     type Output = &'a str;
 
+    /// Access string reference of a Field component by String index
     #[cfg(feature = "string_index")]
     fn index(&self, sidx: String) -> &Self::Output {
         let parts = sidx.split('.').collect::<Vec<&str>>();

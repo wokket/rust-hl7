@@ -1,4 +1,4 @@
-use super::segments::{Segment, MshSegment};
+use super::segments::{MshSegment, Segment};
 use super::separators::Separators;
 use super::*;
 use std::convert::TryFrom;
@@ -12,7 +12,7 @@ use std::ops::Index;
 pub struct Message<'a> {
     pub source: &'a str,
     pub segments: Vec<Segment<'a>>,
-    separators: Separators
+    separators: Separators,
 }
 
 impl<'a> Message<'a> {
@@ -27,7 +27,7 @@ impl<'a> Message<'a> {
         Message {
             source,
             segments: segments,
-            separators: delimiters
+            separators: delimiters,
         }
     }
     /// Extracts header element for external use
@@ -35,21 +35,19 @@ impl<'a> Message<'a> {
         let seg = self
             .segments
             .iter()
-            .find(|s| s.fields[0].source == "MSH" ).unwrap();
-        let segment = MshSegment::parse(seg.source, &self.separators)
-            .expect("Failed to parse MSH segment");
+            .find(|s| s.fields[0].source == "MSH")
+            .unwrap();
+        let segment =
+            MshSegment::parse(seg.source, &self.separators).expect("Failed to parse MSH segment");
         Ok(segment)
     }
 
     /// Extracts generic elements for external use by matching first field to name
-    pub fn segments_by_name(
-        &self,
-        name: &str,
-    ) -> Result<Vec<&Segment<'a>>, Hl7ParseError> {
+    pub fn segments_by_name(&self, name: &str) -> Result<Vec<&Segment<'a>>, Hl7ParseError> {
         let found: Vec<&Segment<'a>> = self
             .segments
             .iter()
-            .filter(|s| s.fields[0].source == name )
+            .filter(|s| s.fields[0].source == name)
             .collect();
         Ok(found)
     }
@@ -130,7 +128,7 @@ impl<'a> TryFrom<&'a str> for Message<'a> {
         let msg = Message {
             source,
             segments: segments?,
-            separators: delimiters
+            separators: delimiters,
         };
 
         Ok(msg)

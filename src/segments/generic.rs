@@ -113,9 +113,11 @@ impl<'a> Index<(usize, usize, usize)> for GenericSegment<'a> {
     }
 }
 
+#[cfg(feature = "string_index")]
 impl<'a> Index<String> for GenericSegment<'a> {
     type Output = &'a str;
     /// Access Field as string reference
+    #[cfg(feature = "string_index")]
     fn index(&self, fidx: String) -> &Self::Output {
         let sections = fidx.split('.').collect::<Vec<&str>>();
         match sections.len() {
@@ -139,12 +141,12 @@ impl<'a> Index<String> for GenericSegment<'a> {
     }
 }
 
+#[cfg(feature = "string_index")]
 impl<'a> Index<&str> for GenericSegment<'a> {
     type Output = &'a str;
 
-    /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
-    #[allow(useless_deprecated)]
-    #[deprecated(note = "This will be removed in a future version")]
+    /// Access Segment, Field, or sub-field string references by string index
+    #[cfg(feature = "string_index")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }
@@ -168,23 +170,26 @@ mod tests {
         assert_eq!(c, "sub&segment");
         assert_eq!(s, "sub");
     }
-
-    #[test]
-    fn ensure_string_index() {
-        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
-        let msg = Message::try_from(hl7).unwrap();
-        let (f, c, s, oob) = match &msg.segments[1] {
-            Segment::Generic(x) => (
-                x.query("F1"),                       //&str
-                x.query("F1.R2"),                    // &str
-                x.query(&*String::from("F1.R2.C1")), //String
-                String::from(x.query("F10")) + x.query("F1.R10") + x.query("F1.R2.C10"),
-            ),
-            _ => ("", "", "", String::from("")),
-        };
-        assert_eq!(f, "segment^sub&segment");
-        assert_eq!(c, "sub&segment");
-        assert_eq!(s, "sub");
-        assert_eq!(oob, "");
+    #[cfg(feature = "string_index")]
+    mod string_index_tests {
+        use super::*;
+        #[test]
+        fn ensure_string_index() {
+            let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
+            let msg = Message::try_from(hl7).unwrap();
+            let (f, c, s, oob) = match &msg.segments[1] {
+                Segment::Generic(x) => (
+                    x.query("F1"),                       //&str
+                    x.query("F1.R2"),                    // &str
+                    x.query(&*String::from("F1.R2.C1")), //String
+                    String::from(x.query("F10")) + x.query("F1.R10") + x.query("F1.R2.C10"),
+                ),
+                _ => ("", "", "", String::from("")),
+            };
+            assert_eq!(f, "segment^sub&segment");
+            assert_eq!(c, "sub&segment");
+            assert_eq!(s, "sub");
+            assert_eq!(oob, "");
+        }
     }
 }

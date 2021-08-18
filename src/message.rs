@@ -205,13 +205,12 @@ impl<'a> Index<usize> for Message<'a> {
         }
     }
 }
-
+#[cfg(feature = "string_index")]
 impl<'a> Index<String> for Message<'a> {
     type Output = &'a str;
 
-    /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
-    #[allow(useless_deprecated)]
-    #[deprecated(note = "This will be removed in a future version")]
+    /// Access Segment, Field, or sub-field string references by string index
+    #[cfg(feature = "string_index")]
     fn index(&self, idx: String) -> &Self::Output {
         // Parse index elements
         let indices: Vec<&str> = idx.split('.').collect();
@@ -242,12 +241,11 @@ impl<'a> Index<String> for Message<'a> {
     }
 }
 
+#[cfg(feature = "string_index")]
 impl<'a> Index<&str> for Message<'a> {
     type Output = &'a str;
 
-    /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
-    #[allow(useless_deprecated)]
-    #[deprecated(note = "This will be removed in a future version")]
+    #[cfg(feature = "string_index")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }
@@ -325,14 +323,17 @@ mod tests {
         assert_eq!(msg.to_string(), String::from(hl7));
         Ok(())
     }
-
-    #[test]
-    fn ensure_index() -> Result<(), Hl7ParseError> {
-        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
-        let msg = Message::try_from(hl7)?;
-        assert_eq!(msg.query("OBR.F1.R2.C1"), "sub");
-        assert_eq!(msg.query(&*"OBR.F1.R2.C1".to_string()), "sub"); // Test the Into param with a String
-        assert_eq!(msg[String::from("OBR.F1.R2.C1")], "sub");
-        Ok(())
+    #[cfg(feature = "string_index")]
+    mod string_index_tests {
+        use super::*;
+        #[test]
+        fn ensure_index() -> Result<(), Hl7ParseError> {
+            let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
+            let msg = Message::try_from(hl7)?;
+            assert_eq!(msg.query("OBR.F1.R2.C1"), "sub");
+            assert_eq!(msg.query(&*"OBR.F1.R2.C1".to_string()), "sub"); // Test the Into param with a String
+            assert_eq!(msg[String::from("OBR.F1.R2.C1")], "sub");
+            Ok(())
+        }
     }
 }

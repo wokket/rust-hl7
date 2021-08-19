@@ -183,33 +183,58 @@ impl<'a> Index<String> for Field<'a> {
     #[cfg(feature = "string_index")]
     fn index(&self, sidx: String) -> &Self::Output {
         let parts = sidx.split('.').collect::<Vec<&str>>();
+        match parts.len() {
+            1 => {
+                let stringnums = parts[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnums.parse().unwrap();
 
-        if parts.len() == 1 {
-            let stringnums = parts[0]
-                .chars()
-                .filter(|c| c.is_digit(10))
-                .collect::<String>();
-            let idx: usize = stringnums.parse().unwrap();
+                &self[idx - 1]
+            },
+            2 => {
+                let stringnums = parts[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
 
-            &self[idx - 1]
-        } else if parts.len() == 2 {
-            let stringnums = parts[0]
-                .chars()
-                .filter(|c| c.is_digit(10))
-                .collect::<String>();
+                let idx0: usize = stringnums.parse().unwrap();
 
-            let idx0: usize = stringnums.parse().unwrap();
+                let stringnums = parts[1]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
 
-            let stringnums = parts[1]
-                .chars()
-                .filter(|c| c.is_digit(10))
-                .collect::<String>();
+                let idx1: usize = stringnums.parse().unwrap();
 
-            let idx1: usize = stringnums.parse().unwrap();
+                &self[(idx0 - 1, idx1 - 1)]
+            },
+            3 => {
+                let stringnums = parts[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
 
-            &self[(idx0 - 1, idx1 - 1)]
-        } else {
-            &""
+                let idx0: usize = stringnums.parse().unwrap();
+
+                let stringnums = parts[1]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+
+                let idx1: usize = stringnums.parse().unwrap();
+
+                let stringnums = parts[2]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+
+                let idx2: usize = stringnums.parse().unwrap();
+
+                &self[(idx0 - 1, idx1 - 1, idx2 - 1)]
+            },
+            _ => &""
         }
     }
 }

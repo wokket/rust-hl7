@@ -67,6 +67,9 @@ impl<'a> Segment<'a> {
                     .filter(|c| c.is_digit(10))
                     .collect::<String>();
                 let idx: usize = stringnum.parse().unwrap();
+                if idx > self.fields.len() - 1 {
+                    return &""
+                }
                 let field = &self.fields[idx];
                 let query = sections[1..].join(".");
 

@@ -31,11 +31,7 @@ impl<'a> Message<'a> {
     }
     /// Extracts header element for external use
     pub fn msh(&self) -> Result<MshSegment, Hl7ParseError> {
-        let seg = self
-            .segments
-            .iter()
-            .find(|s| s.fields[0].source == "MSH")
-            .unwrap();
+        let seg = self.segments_by_name("MSH").unwrap()[0];
         let segment =
             MshSegment::parse(seg.source, &self.separators).expect("Failed to parse MSH segment");
         Ok(segment)

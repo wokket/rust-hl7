@@ -7,6 +7,9 @@ description = "HL7 Parser and object builder? query'er? - experimental only at a
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/wokket/rust-hl7/"
 
+[features]
+string_index = []
+
 [lib]
 name="rusthl7"
 path="src/lib.rs"

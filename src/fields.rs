@@ -20,20 +20,31 @@ impl<'a> Field<'a> {
         delims: &Separators,
     ) -> Result<Field<'a>, Hl7ParseError> {
         let input = input.into();
-        let components = input.split(delims.component).collect::<Vec<&'a str>>();
-        let subcomponents = components
+        let components: Vec<&'a str> = input
+            .split(delims.component)
+            .collect::<Vec<&'a str>>()
+            .iter()
+            .map(|c| c.split(delims.repeat).collect::<Vec<&'a str>>())
+            .flatten()
+            .collect();
+        let subcomponents: Vec<Vec<&'a str>> = components
             .iter()
             .map(|c| c.split(delims.subcomponent).collect::<Vec<&'a str>>())
             .collect();
-
         let field = Field {
             source: input,
             delims: *delims,
             components,
             subcomponents,
         };
-
         Ok(field)
+    }
+
+    /// Convenience method to check whether Field is a single data element or broken out into multiple internally
+    // Not used internally - marked to allow dead code as a result
+    #[allow(dead_code)]
+    fn is_subdivided(&self) -> bool {
+        self.components.len() > 1 || self.subcomponents[0].len() > 1
     }
 
     /// Used to hide the removal of NoneError for #2...  If passed `Some()` value it returns a field with that value.  If passed `None() it returns an `Err(Hl7ParseError::MissingRequiredValue{})`
@@ -125,9 +136,9 @@ impl<'a> Clone for Field<'a> {
     }
 }
 
-/// Access string reference of a Field component by numeric index
 impl<'a> Index<usize> for Field<'a> {
     type Output = &'a str;
+    /// Access string reference of a Field component by numeric index
     fn index(&self, idx: usize) -> &Self::Output {
         if idx > self.components.len() - 1 {
             return &""; //TODO: We're returning &&str here which doesn't seem right?!?
@@ -137,9 +148,9 @@ impl<'a> Index<usize> for Field<'a> {
     }
 }
 
-/// Access string reference of a Field subcomponent by numeric index
 impl<'a> Index<(usize, usize)> for Field<'a> {
     type Output = &'a str;
+    /// Access string reference of a Field subcomponent by numeric index
     fn index(&self, idx: (usize, usize)) -> &Self::Output {
         if idx.0 > self.components.len() - 1 || idx.1 > self.subcomponents[idx.0].len() - 1 {
             return &""; //TODO: We're returning &&str here which doesn't seem right?!?
@@ -149,12 +160,12 @@ impl<'a> Index<(usize, usize)> for Field<'a> {
     }
 }
 
-/// DEPRECATED. Access string reference of a Field component by String index
-/// Adjust the index by one as medical people do not count from zero
-#[allow(useless_deprecated)]
-#[deprecated(note = "This will be removed in a future version")]
+#[cfg(feature = "string_index")]
 impl<'a> Index<String> for Field<'a> {
     type Output = &'a str;
+
+    /// Access string reference of a Field component by String index
+    #[cfg(feature = "string_index")]
     fn index(&self, sidx: String) -> &Self::Output {
         let parts = sidx.split('.').collect::<Vec<&str>>();
 
@@ -188,12 +199,12 @@ impl<'a> Index<String> for Field<'a> {
     }
 }
 
+#[cfg(feature = "string_index")]
 impl<'a> Index<&str> for Field<'a> {
     type Output = &'a str;
 
-    /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
-    #[allow(useless_deprecated)]
-    #[deprecated(note = "This will be removed in a future version")]
+    /// Access Segment, Field, or sub-field string references by string index
+    #[cfg(feature = "string_index")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }
@@ -294,13 +305,37 @@ mod tests {
     }
 
     #[test]
-    fn test_string_index() {
+    fn test_is_subdivided() {
         let d = Separators::default();
-        let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
-        let idx0 = String::from("R2");
-        let oob = "R2.C3";
-        assert_eq!(f.query(&*idx0), "yyy&zzz");
-        assert_eq!(f.query("R2.C2"), "zzz");
-        assert_eq!(f.query(oob), "");
+        let f0 = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
+        let f1 = Field::parse_mandatory(Some("yyy&zzz"), &d).unwrap();
+        let f2 = Field::parse_mandatory(Some("xxx"), &d).unwrap();
+        assert_eq!(f0.is_subdivided(), true);
+        assert_eq!(f1.is_subdivided(), true);
+        assert_eq!(f2.is_subdivided(), false);
+    }
+
+    #[cfg(feature = "string_index")]
+    mod string_index_tests {
+        use super::*;
+        #[test]
+        fn test_string_index() {
+            let d = Separators::default();
+            let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
+            let idx0 = String::from("R2");
+            assert_eq!(f["R2"], "yyy&zzz");
+            assert_eq!(f["R2.C2"], "zzz");
+            assert_eq!(f["R2.C3"], "");
+        }
+        #[test]
+        fn test_string_index_repeating() {
+            let d = Separators::default();
+            let f = Field::parse_mandatory(Some("A~S"), &d).unwrap();
+            let idx0 = String::from("R2");
+            let oob = "R2.C3";
+            assert_eq!(f["R1"], "A");
+            assert_eq!(f.query("R2"), "S");
+            assert_eq!(f["R3"], "");
+        }
     }
 }

@@ -1,7 +1,162 @@
-use super::fields::Field;
-use super::separators::Separators;
-use super::*;
+use super::{fields::Field, separators::Separators, Hl7ParseError};
 use std::fmt::Display;
+use std::ops::Index;
+
+/// All defined segment types
+pub enum Segments<'a> {
+    Generic(Segment<'a>),
+    MSH(MshSegment<'a>),
+}
+
+/// A generic bag o' fields, representing an arbitrary segment.
+#[derive(Debug, PartialEq, Clone)]
+pub struct Segment<'a> {
+    pub source: &'a str,
+    pub delim: char,
+    pub fields: Vec<Field<'a>>,
+}
+
+impl<'a> Segment<'a> {
+    /// Convert the given line of text into a Segment.
+    pub fn parse<S: Into<&'a str>>(
+        input: S,
+        delims: &Separators,
+    ) -> Result<Segment<'a>, Hl7ParseError> {
+        let input = input.into();
+
+        let fields: Result<Vec<Field<'a>>, Hl7ParseError> = input
+            .split(delims.field)
+            .map(|line| Field::parse(line, delims))
+            .collect();
+
+        let fields = fields?;
+        let seg = Segment {
+            source: input,
+            delim: delims.segment,
+            fields,
+        };
+        Ok(seg)
+    }
+
+    /// Export source to str
+    #[inline]
+    pub fn as_str(&self) -> &'a str {
+        self.source
+    }
+
+    /// Access Field as string reference
+    pub fn query<'b, S>(&self, fidx: S) -> &'a str
+    where
+        S: Into<&'b str>,
+    {
+        let fidx = fidx.into();
+        let sections = fidx.split('.').collect::<Vec<&str>>();
+
+        match sections.len() {
+            1 => {
+                let stringnum = sections[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnum.parse().unwrap();
+                self[idx]
+            }
+            _ => {
+                let stringnum = sections[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnum.parse().unwrap();
+                let field = &self.fields[idx];
+                let query = sections[1..].join(".");
+
+                field.query(&*query)
+            }
+        }
+    }
+}
+
+impl<'a> Display for Segment<'a> {
+    /// Required for to_string() and other formatter consumers
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.source)
+    }
+}
+
+impl<'a> Index<usize> for Segment<'a> {
+    type Output = &'a str;
+    /// Access Field as string reference
+    fn index(&self, fidx: usize) -> &Self::Output {
+        if fidx > self.fields.len() - 1 {
+            return &"";
+        };
+        &self.fields[fidx].source
+    }
+}
+
+impl<'a> Index<(usize, usize)> for Segment<'a> {
+    type Output = &'a str;
+    /// Access Field component as string reference
+    fn index(&self, fidx: (usize, usize)) -> &Self::Output {
+        if fidx.0 > self.fields.len() - 1 || fidx.1 > self.fields[fidx.0].components.len() - 1 {
+            return &"";
+        }
+        &self.fields[fidx.0][fidx.1]
+    }
+}
+
+impl<'a> Index<(usize, usize, usize)> for Segment<'a> {
+    type Output = &'a str;
+    /// Access Field subcomponent as string reference
+    fn index(&self, fidx: (usize, usize, usize)) -> &Self::Output {
+        if fidx.0 > self.fields.len() - 1
+            || fidx.1 > self.fields[fidx.0].components.len() - 1
+            || fidx.2 > self.fields[fidx.0].subcomponents[fidx.1].len() - 1
+        {
+            return &"";
+        }
+        &self.fields[fidx.0][(fidx.1, fidx.2)]
+    }
+}
+
+#[cfg(feature = "string_index")]
+impl<'a> Index<String> for Segment<'a> {
+    type Output = &'a str;
+    /// Access Field as string reference
+    #[cfg(feature = "string_index")]
+    fn index(&self, fidx: String) -> &Self::Output {
+        let sections = fidx.split('.').collect::<Vec<&str>>();
+        match sections.len() {
+            1 => {
+                let stringnum = sections[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnum.parse().unwrap();
+                &self[idx]
+            }
+            _ => {
+                let stringnum = sections[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnum.parse().unwrap();
+                &self.fields[idx][sections[1..].join(".")]
+            }
+        }
+    }
+}
+
+#[cfg(feature = "string_index")]
+impl<'a> Index<&str> for Segment<'a> {
+    type Output = &'a str;
+
+    /// Access Segment, Field, or sub-field string references by string index
+    #[cfg(feature = "string_index")]
+    fn index(&self, idx: &str) -> &Self::Output {
+        &self[String::from(idx)]
+    }
+}
 
 /// The most important Segment, almost all HL7 messages have an MSH (MLLP simple ack I'm looking at you).
 /// Given the importance of this segment for driving application behaviour, it gets the special treatment
@@ -81,12 +236,6 @@ impl<'a> MshSegment<'a> {
     pub fn as_str(&self) -> &'a str {
         self.source
     }
-
-    /// Present MSH data in Generic segment
-    pub fn as_generic(&self) -> Result<GenericSegment<'a>, Hl7ParseError> {
-        let delims = self.msh_2_encoding_characters;
-        GenericSegment::parse(self.source, &delims)
-    }
 }
 
 impl<'a> Display for MshSegment<'a> {
@@ -106,7 +255,39 @@ impl<'a> Clone for MshSegment<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::{message::Message, segments::*, separators::Separators, Hl7ParseError};
+    use std::convert::TryFrom;
+
+    #[test]
+    fn ensure_numeric_index() {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
+        let msg = Message::try_from(hl7).unwrap();
+        let x = &msg.segments[1];
+        let (f, c, s) = (x[1], x[(1, 1)], x[(1, 1, 0)]);
+        assert_eq!(f, "segment^sub&segment");
+        assert_eq!(c, "sub&segment");
+        assert_eq!(s, "sub");
+    }
+    #[cfg(feature = "string_index")]
+    mod string_index_tests {
+        use super::*;
+        #[test]
+        fn ensure_string_index() {
+            let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
+            let msg = Message::try_from(hl7).unwrap();
+            let x = &msg.segments[1];
+            let (f, c, s, oob) = (
+                x.query("F1"),                       //&str
+                x.query("F1.R2"),                    // &str
+                x.query(&*String::from("F1.R2.C1")), //String
+                String::from(x.query("F10")) + x.query("F1.R10") + x.query("F1.R2.C10"),
+            );
+            assert_eq!(f, "segment^sub&segment");
+            assert_eq!(c, "sub&segment");
+            assert_eq!(s, "sub");
+            assert_eq!(oob, "");
+        }
+    }
 
     #[test]
     fn ensure_msh_fields_are_populated() -> Result<(), Hl7ParseError> {
@@ -139,17 +320,6 @@ mod tests {
 
         assert_eq!(msh.msh_8_security, None); //blank field check
         assert_eq!(msh.msh_12_version_id.value(), "2.4"); //we got to the end ok
-        Ok(())
-    }
-
-    #[test]
-    fn ensure_msh_converts_to_generic() -> Result<(), Hl7ParseError> {
-        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
-        let delims = Separators::default();
-
-        let msh = MshSegment::parse(hl7, &delims)?;
-        let gen = msh.as_generic().unwrap();
-        assert_eq!("ELAB-3", gen.query("F3"));
         Ok(())
     }
 

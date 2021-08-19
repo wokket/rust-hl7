@@ -126,21 +126,26 @@ impl<'a> Index<String> for Segment<'a> {
     #[cfg(feature = "string_index")]
     fn index(&self, fidx: String) -> &Self::Output {
         let sections = fidx.split('.').collect::<Vec<&str>>();
+        let stringnum = sections[0]
+            .chars()
+            .filter(|c| c.is_digit(10))
+            .collect::<String>();
+        let mut idx: usize = stringnum.parse().unwrap();
+        // MSH segment has an off-by-one problem in that the first
+        // field separator is considered to be a field in the spec
+        // https://hl7-definition.caristix.com/v2/HL7v2.8/Segments/MSH
+        if self.fields[0].source == "MSH" {
+            if idx == 1 {
+                return &"|" //&&self.source[3..3] //TODO figure out how to return a string ref safely
+            } else {
+                idx = idx - 1
+            }
+        }
         match sections.len() {
             1 => {
-                let stringnum = sections[0]
-                    .chars()
-                    .filter(|c| c.is_digit(10))
-                    .collect::<String>();
-                let idx: usize = stringnum.parse().unwrap();
                 &self[idx]
             }
             _ => {
-                let stringnum = sections[0]
-                    .chars()
-                    .filter(|c| c.is_digit(10))
-                    .collect::<String>();
-                let idx: usize = stringnum.parse().unwrap();
                 &self.fields[idx][sections[1..].join(".")]
             }
         }

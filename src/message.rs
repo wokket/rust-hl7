@@ -289,7 +289,7 @@ mod tests {
             assert_eq!(msg.query("OBR.F1.R2.C1"), "sub");
             assert_eq!(msg.query(&*"OBR.F1.R2.C1".to_string()), "sub"); // Test the Into param with a String
             assert_eq!(msg[String::from("OBR.F1.R2.C1")], "sub");
-            assert_eq!(msg["MSH.F3"], "ELAB-3");
+            assert_eq!(msg["MSH.F2"], "^~\\&");
             Ok(())
         }
     }

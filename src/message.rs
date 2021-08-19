@@ -17,17 +17,16 @@ pub struct Message<'a> {
 
 impl<'a> Message<'a> {
     pub fn new(source: &'a str) -> Message<'a> {
-        let delimiters = str::parse::<Separators>(source);
-        let delimiters = delimiters.unwrap();
+        let separators = str::parse::<Separators>(source).unwrap();
         let segments: Vec<Segment<'a>> = source
-            .split(delimiters.segment)
-            .map(|line| Segment::parse(line, &delimiters).unwrap())
+            .split(separators.segment)
+            .map(|line| Segment::parse(line, &separators).unwrap())
             .collect();
 
         Message {
             source,
-            segments: segments,
-            separators: delimiters,
+            segments,
+            separators
         }
     }
     /// Extracts header element for external use

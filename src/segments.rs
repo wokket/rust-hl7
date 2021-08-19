@@ -3,10 +3,10 @@ use std::fmt::Display;
 use std::ops::Index;
 
 /// All defined segment types
-pub enum Segments<'a> {
-    Generic(Segment<'a>),
-    MSH(MshSegment<'a>),
-}
+// pub enum Segments<'a> {
+//     Generic(Segment<'a>),
+//     MSH(MshSegment<'a>),
+// }
 
 /// A generic bag o' fields, representing an arbitrary segment.
 #[derive(Debug, PartialEq, Clone)]
@@ -68,7 +68,7 @@ impl<'a> Segment<'a> {
                     .collect::<String>();
                 let idx: usize = stringnum.parse().unwrap();
                 if idx > self.fields.len() - 1 {
-                    return &""
+                    return ""
                 }
                 let field = &self.fields[idx];
                 let query = sections[1..].join(".");

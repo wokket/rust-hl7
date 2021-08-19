@@ -276,10 +276,10 @@ mod tests {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
         let msg = Message::try_from(hl7).unwrap();
         let x = &msg.segments[1];
-        let (f, c, s) = (x[1], x[(1, 1)], x[(1, 1, 0)]);
+        let (f, c, s) = (x[1], x[(1, 0)], x[(1, 0, 1)]);
         assert_eq!(f, "segment^sub&segment");
-        assert_eq!(c, "sub&segment");
-        assert_eq!(s, "sub");
+        assert_eq!(c, f);
+        assert_eq!(s, "sub&segment");
     }
 
     #[test]
@@ -289,13 +289,13 @@ mod tests {
         let x = &msg.segments[1];
         let (f, c, s, oob) = (
             x.query("F1"),                       //&str
-            x.query("F1.R2"),                    // &str
-            x.query(&*String::from("F1.R2.C1")), //String
+            x.query("F1.R1"),                    // &str
+            x.query(&*String::from("F1.R1.C1")), //String
             String::from(x.query("F10")) + x.query("F1.R10") + x.query("F1.R2.C10"),
         );
         assert_eq!(f, "segment^sub&segment");
-        assert_eq!(c, "sub&segment");
-        assert_eq!(s, "sub");
+        assert_eq!(c, f);
+        assert_eq!(s, "segment");
         assert_eq!(oob, "");
     }
     #[test]
@@ -353,13 +353,13 @@ mod tests {
             let x = &msg.segments[1];
             let (f, c, s, oob) = (
                 x["F1"],                       // &str
-                x["F1.R2"],                    // &str
-                x["F1.R2.C1".to_owned()],      // String
-                x["F10.R11.C12"]
+                x["F1.R1"],                    // &str
+                x["F1.R1.C1".to_owned()],      // String
+                x["F1.R2.C2"]
             );
             assert_eq!(f, "segment^sub&segment");
-            assert_eq!(c, "sub&segment");
-            assert_eq!(s, "sub");
+            assert_eq!(c, "segment^sub&segment");
+            assert_eq!(s, "segment");
             assert_eq!(oob, "");
         }
     }

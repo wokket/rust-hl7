@@ -9,8 +9,9 @@ use std::ops::Index;
 pub struct Field<'a> {
     pub source: &'a str,
     pub delims: Separators,
-    pub components: Vec<&'a str>,
-    pub subcomponents: Vec<Vec<&'a str>>,
+    pub repeats: Vec<&'a str>,
+    pub components: Vec<Vec<&'a str>>,
+    pub subcomponents: Vec<Vec<Vec<&'a str>>>,
 }
 
 impl<'a> Field<'a> {
@@ -20,31 +21,30 @@ impl<'a> Field<'a> {
         delims: &Separators,
     ) -> Result<Field<'a>, Hl7ParseError> {
         let input = input.into();
-        let components: Vec<&'a str> = input
-            .split(delims.component)
-            .collect::<Vec<&'a str>>()
-            .iter()
-            .map(|c| c.split(delims.repeat).collect::<Vec<&'a str>>())
-            .flatten()
+        let repeats: Vec<&'a str> = input
+            .split(delims.repeat)
             .collect();
-        let subcomponents: Vec<Vec<&'a str>> = components
+        let components: Vec<Vec<&'a str>> = repeats
             .iter()
-            .map(|c| c.split(delims.subcomponent).collect::<Vec<&'a str>>())
+            .map(|r| r.split(delims.component).collect::<Vec<&'a str>>())
+            .collect();
+        let subcomponents: Vec<Vec<Vec<&'a str>>> = components
+            .iter()
+            .map(|r|{
+                r.iter().map(|c| 
+                    c.split(delims.subcomponent).collect::<Vec<&'a str>>()
+                )
+                .collect::<Vec<Vec<&'a str>>>()
+            })
             .collect();
         let field = Field {
             source: input,
             delims: *delims,
+            repeats,
             components,
             subcomponents,
         };
         Ok(field)
-    }
-
-    /// Convenience method to check whether Field is a single data element or broken out into multiple internally
-    // Not used internally - marked to allow dead code as a result
-    #[allow(dead_code)]
-    fn is_subdivided(&self) -> bool {
-        self.components.len() > 1 || self.subcomponents[0].len() > 1
     }
 
     /// Used to hide the removal of NoneError for #2...  If passed `Some()` value it returns a field with that value.  If passed `None() it returns an `Err(Hl7ParseError::MissingRequiredValue{})`
@@ -140,11 +140,11 @@ impl<'a> Index<usize> for Field<'a> {
     type Output = &'a str;
     /// Access string reference of a Field component by numeric index
     fn index(&self, idx: usize) -> &Self::Output {
-        if idx > self.components.len() - 1 {
+        if idx > self.repeats.len() - 1 {
             return &""; //TODO: We're returning &&str here which doesn't seem right?!?
         }
 
-        &self.components[idx]
+        &self.repeats[idx]
     }
 }
 
@@ -152,13 +152,28 @@ impl<'a> Index<(usize, usize)> for Field<'a> {
     type Output = &'a str;
     /// Access string reference of a Field subcomponent by numeric index
     fn index(&self, idx: (usize, usize)) -> &Self::Output {
-        if idx.0 > self.components.len() - 1 || idx.1 > self.subcomponents[idx.0].len() - 1 {
+        if idx.0 > self.repeats.len() - 1 || idx.1 > self.components[idx.0].len() - 1 {
             return &""; //TODO: We're returning &&str here which doesn't seem right?!?
         }
 
-        &self.subcomponents[idx.0][idx.1]
+        &self.components[idx.0][idx.1]
     }
 }
+
+impl<'a> Index<(usize, usize, usize)> for Field<'a> {
+    type Output = &'a str;
+    /// Access string reference of a Field subcomponent by numeric index
+    fn index(&self, idx: (usize, usize, usize)) -> &Self::Output {
+        if idx.0 > self.repeats.len() - 1
+            || idx.1 > self.components[idx.0].len() - 1
+            || idx.2 > self.subcomponents[idx.0][idx.1].len() - 1 {
+            return &""; //TODO: We're returning &&str here which doesn't seem right?!?
+        }
+
+        &self.subcomponents[idx.0][idx.1][idx.2]
+    }
+}
+
 
 #[cfg(feature = "string_index")]
 impl<'a> Index<String> for Field<'a> {
@@ -266,20 +281,25 @@ mod tests {
             _ => assert!(false),
         }
     }
+    #[test]
+    fn test_parse_repeats() {
+        let d = Separators::default();
+        let f = Field::parse_mandatory(Some("x&x^y&y~a&a^b&b"), &d).unwrap();
+        assert_eq!(f.repeats.len(), 2)
+    }
 
     #[test]
     fn test_parse_components() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy"), &d).unwrap();
-
-        assert_eq!(f.components.len(), 2)
+        assert_eq!(f.components[0].len(), 2)
     }
 
     #[test]
     fn test_parse_subcomponents() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
-        assert_eq!(f.subcomponents[1].len(), 2)
+        assert_eq!(f.subcomponents[0][1].len(), 2)
     }
 
     #[test]
@@ -300,19 +320,8 @@ mod tests {
     fn test_uint_index() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
-        assert_eq!(f[1], "yyy&zzz");
-        assert_eq!(f[(1, 1)], "zzz");
-    }
-
-    #[test]
-    fn test_is_subdivided() {
-        let d = Separators::default();
-        let f0 = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
-        let f1 = Field::parse_mandatory(Some("yyy&zzz"), &d).unwrap();
-        let f2 = Field::parse_mandatory(Some("xxx"), &d).unwrap();
-        assert_eq!(f0.is_subdivided(), true);
-        assert_eq!(f1.is_subdivided(), true);
-        assert_eq!(f2.is_subdivided(), false);
+        assert_eq!(f[(0, 1)], "yyy&zzz");
+        assert_eq!(f[(0, 1, 1)], "zzz");
     }
 
     #[cfg(feature = "string_index")]
@@ -321,21 +330,11 @@ mod tests {
         #[test]
         fn test_string_index() {
             let d = Separators::default();
-            let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
-            let idx0 = String::from("R2");
-            assert_eq!(f["R2"], "yyy&zzz");
-            assert_eq!(f["R2.C2"], "zzz");
+            let f = Field::parse_mandatory(Some("x&x^y&y~a&a^b&b"), &d).unwrap();
+            println!("{:#?}",f);
+            assert_eq!(f["R2"], "a&a^b&b");
+            assert_eq!(f["R2.C2"], "b&b");
             assert_eq!(f["R2.C3"], "");
-        }
-        #[test]
-        fn test_string_index_repeating() {
-            let d = Separators::default();
-            let f = Field::parse_mandatory(Some("A~S"), &d).unwrap();
-            let idx0 = String::from("R2");
-            let oob = "R2.C3";
-            assert_eq!(f["R1"], "A");
-            assert_eq!(f.query("R2"), "S");
-            assert_eq!(f["R3"], "");
         }
     }
 }

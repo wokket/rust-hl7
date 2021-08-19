@@ -157,8 +157,7 @@ impl<'a> EscapeSequence {
                                 output.extend_from_slice(sequence.as_bytes());
                                 output.extend_from_slice(&self.escape_buf);
 
-                            } else if sequence.starts_with('X') {
-                                let hex_code = &sequence[1..];
+                            } else if let Some(hex_code) = sequence.strip_prefix('X') {
                                 let hex = hex::decode(hex_code).expect("Unable to parse X-value into valid hex");
                                 println!("Converted hex code {} to {:?}", hex_code, hex);
                                 output.extend_from_slice(&hex);

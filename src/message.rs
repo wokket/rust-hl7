@@ -278,6 +278,17 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn ensure_query() -> Result<(), Hl7ParseError> {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
+        let msg = Message::try_from(hl7)?;
+        assert_eq!(msg.query("OBR.F1.R1.C2"), "sub&segment");
+        assert_eq!(msg.query(&*"OBR.F1.R1.C1".to_string()), "segment"); // Test the Into param with a String
+        assert_eq!(msg.query(&*String::from("OBR.F1.R1.C1")), "segment");
+        assert_eq!(msg["MSH.F2"], "^~\\&");
+        Ok(())
+    }
+
     #[cfg(feature = "string_index")]
     mod string_index_tests {
         use super::*;
@@ -285,8 +296,8 @@ mod tests {
         fn ensure_index() -> Result<(), Hl7ParseError> {
             let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
             let msg = Message::try_from(hl7)?;
-            assert_eq!(msg.query("OBR.F1.R1.C2"), "sub&segment");
-            assert_eq!(msg.query(&*"OBR.F1.R1.C1".to_string()), "segment"); // Test the Into param with a String
+            assert_eq!(msg["OBR.F1.R1.C2"], "sub&segment");
+            assert_eq!(msg[&*"OBR.F1.R1.C1".to_string()], "segment"); // Test the Into param with a String
             assert_eq!(msg[String::from("OBR.F1.R1.C1")], "segment");
             assert_eq!(msg[String::from("OBR.F1.R1.C2.S2")], "segment");
             assert_eq!(msg["MSH.F2"], "^~\\&");

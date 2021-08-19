@@ -349,6 +349,17 @@ mod tests {
         assert_eq!(f[(0, 1, 1)], "zzz");
     }
 
+    #[test]
+    fn test_string_query() {
+        let d = Separators::default();
+        let f = Field::parse_mandatory(Some("x&x^y&y~a&a^b&b"), &d).unwrap();
+        let idx0 = String::from("R2");
+        let oob = "R2.C3";
+        assert_eq!(f.query(&*idx0), "a&a^b&b");
+        assert_eq!(f.query("R2.C2"), "b&b");
+        assert_eq!(f.query(oob), "");
+    }
+
     #[cfg(feature = "string_index")]
     mod string_index_tests {
         use super::*;
@@ -356,7 +367,6 @@ mod tests {
         fn test_string_index() {
             let d = Separators::default();
             let f = Field::parse_mandatory(Some("x&x^y&y~a&a^b&b"), &d).unwrap();
-            println!("{:#?}",f);
             assert_eq!(f["R2"], "a&a^b&b");
             assert_eq!(f["R2.C2"], "b&b");
             assert_eq!(f["R2.C3"], "");

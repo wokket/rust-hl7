@@ -141,7 +141,8 @@ impl<'a> Index<&str> for Segment<'a> {
         // https://hl7-definition.caristix.com/v2/HL7v2.8/Segments/MSH
         if self.fields[0].source == "MSH" {
             if idx == 1 {
-                return &"|" //&&self.source[3..3] //TODO figure out how to return a string ref safely
+                // return &&self.source[3..3]; //TODO figure out how to return a string ref safely
+                return &"|"
             } else {
                 idx = idx - 1
             }
@@ -280,27 +281,23 @@ mod tests {
         assert_eq!(c, "sub&segment");
         assert_eq!(s, "sub");
     }
-    #[cfg(feature = "string_index")]
-    mod string_index_tests {
-        use super::*;
-        #[test]
-        fn ensure_string_index() {
-            let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
-            let msg = Message::try_from(hl7).unwrap();
-            let x = &msg.segments[1];
-            let (f, c, s, oob) = (
-                x["F1"],                       //&str
-                x["F1.R2"],                    // &str
-                x["F1.R2.C1"], //String
-                x["F10.R11.C12"]
-            );
-            assert_eq!(f, "segment^sub&segment");
-            assert_eq!(c, "sub&segment");
-            assert_eq!(s, "sub");
-            assert_eq!(oob, "");
-        }
-    }
 
+    #[test]
+    fn ensure_string_query() {
+        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
+        let msg = Message::try_from(hl7).unwrap();
+        let x = &msg.segments[1];
+        let (f, c, s, oob) = (
+            x.query("F1"),                       //&str
+            x.query("F1.R2"),                    // &str
+            x.query(&*String::from("F1.R2.C1")), //String
+            String::from(x.query("F10")) + x.query("F1.R10") + x.query("F1.R2.C10"),
+        );
+        assert_eq!(f, "segment^sub&segment");
+        assert_eq!(c, "sub&segment");
+        assert_eq!(s, "sub");
+        assert_eq!(oob, "");
+    }
     #[test]
     fn ensure_msh_fields_are_populated() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
@@ -344,5 +341,26 @@ mod tests {
         let dolly = msh.clone();
         assert_eq!(msh, dolly);
         Ok(())
+    }
+
+    #[cfg(feature = "string_index")]
+    mod string_index_tests {
+        use super::*;
+        #[test]
+        fn ensure_string_index() {
+            let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
+            let msg = Message::try_from(hl7).unwrap();
+            let x = &msg.segments[1];
+            let (f, c, s, oob) = (
+                x["F1"],                       // &str
+                x["F1.R2"],                    // &str
+                x["F1.R2.C1".to_owned()],      // String
+                x["F10.R11.C12"]
+            );
+            assert_eq!(f, "segment^sub&segment");
+            assert_eq!(c, "sub&segment");
+            assert_eq!(s, "sub");
+            assert_eq!(oob, "");
+        }
     }
 }

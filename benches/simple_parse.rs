@@ -30,7 +30,7 @@ fn get_msh_and_read_field(c: &mut Criterion) {
         let m = Message::try_from(get_sample_message()).unwrap();
 
         b.iter(|| {
-            let seg = m.segments.first();
+            // Parse a new segment referencing the internal MSH Segment's source
             let msh = m.msh();
             match msh {
                 Ok(m) => {

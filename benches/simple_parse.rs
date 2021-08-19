@@ -31,7 +31,7 @@ fn get_msh_and_read_field(c: &mut Criterion) {
         let msh = m.msh().unwrap();
 
         b.iter(|| {
-            let _app =  m.msh_3_sending_application.as_ref().unwrap(); // direct variable access
+            let _app =  msh.msh_3_sending_application.as_ref().unwrap(); // direct variable access
             //println!("{}", _app.value());
         })
     });

@@ -98,7 +98,9 @@ impl<'a> Index<(usize, usize)> for Segment<'a> {
     type Output = &'a str;
     /// Access Field component as string reference
     fn index(&self, fidx: (usize, usize)) -> &Self::Output {
-        if fidx.0 > self.fields.len() - 1 || fidx.1 > self.fields[fidx.0].components.len() - 1 {
+        if fidx.0 > self.fields.len() - 1
+            || fidx.1 > self.fields[fidx.0].components.len() - 1
+        {
             return &"";
         }
         &self.fields[fidx.0][fidx.1]
@@ -120,11 +122,11 @@ impl<'a> Index<(usize, usize, usize)> for Segment<'a> {
 }
 
 #[cfg(feature = "string_index")]
-impl<'a> Index<String> for Segment<'a> {
+impl<'a> Index<&str> for Segment<'a> {
     type Output = &'a str;
     /// Access Field as string reference
     #[cfg(feature = "string_index")]
-    fn index(&self, fidx: String) -> &Self::Output {
+    fn index(&self, fidx: &str) -> &Self::Output {
         let sections = fidx.split('.').collect::<Vec<&str>>();
         let stringnum = sections[0]
             .chars()
@@ -146,20 +148,22 @@ impl<'a> Index<String> for Segment<'a> {
                 &self[idx]
             }
             _ => {
-                &self.fields[idx][sections[1..].join(".")]
+                if idx < self.fields.len() {
+                    &self.fields[idx][sections[1..].join(".")]
+                } else { &"" }
             }
         }
     }
 }
 
 #[cfg(feature = "string_index")]
-impl<'a> Index<&str> for Segment<'a> {
+impl<'a> Index<String> for Segment<'a> {
     type Output = &'a str;
 
     /// Access Segment, Field, or sub-field string references by string index
     #[cfg(feature = "string_index")]
-    fn index(&self, idx: &str) -> &Self::Output {
-        &self[String::from(idx)]
+    fn index(&self, idx: String) -> &Self::Output {
+        &self[idx.as_str()]
     }
 }
 
@@ -282,10 +286,10 @@ mod tests {
             let msg = Message::try_from(hl7).unwrap();
             let x = &msg.segments[1];
             let (f, c, s, oob) = (
-                x.query("F1"),                       //&str
-                x.query("F1.R2"),                    // &str
-                x.query(&*String::from("F1.R2.C1")), //String
-                String::from(x.query("F10")) + x.query("F1.R10") + x.query("F1.R2.C10"),
+                x["F1"],                       //&str
+                x["F1.R2"],                    // &str
+                x["F1.R2.C1"], //String
+                x["F10.R11.C12"]
             );
             assert_eq!(f, "segment^sub&segment");
             assert_eq!(c, "sub&segment");

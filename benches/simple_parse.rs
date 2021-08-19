@@ -28,17 +28,11 @@ fn get_segments_by_name(c: &mut Criterion) {
 fn get_msh_and_read_field(c: &mut Criterion) {
     c.bench_function("Read Field from MSH (variable)", |b| {
         let m = Message::try_from(get_sample_message()).unwrap();
+        let msh = m.msh().unwrap();
 
         b.iter(|| {
-            // Parse a new segment referencing the internal MSH Segment's source
-            let msh = m.msh();
-            match msh {
-                Ok(m) => {
-                    let _app =  m.msh_3_sending_application.as_ref().unwrap(); // direct variable access
-                     //println!("{}", _app.value());
-                },
-                Hl7ParseError => panic!("Failed to parse MSH")
-            };
+            let _app =  m.msh_3_sending_application.as_ref().unwrap(); // direct variable access
+            //println!("{}", _app.value());
         })
     });
 }

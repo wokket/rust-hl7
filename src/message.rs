@@ -281,7 +281,7 @@ mod tests {
         assert_eq!(msg.query("OBR.F1.R1.C2"), "sub&segment");
         assert_eq!(msg.query(&*"OBR.F1.R1.C1".to_string()), "segment"); // Test the Into param with a String
         assert_eq!(msg.query(&*String::from("OBR.F1.R1.C1")), "segment");
-        assert_eq!(msg["MSH.F2"], "^~\\&");
+        assert_eq!(msg.query("MSH.F1"), "^~\\&"); 
         Ok(())
     }
 

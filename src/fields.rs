@@ -9,8 +9,9 @@ use std::ops::Index;
 pub struct Field<'a> {
     pub source: &'a str,
     pub delims: Separators,
-    pub components: Vec<&'a str>,
-    pub subcomponents: Vec<Vec<&'a str>>,
+    pub repeats: Vec<&'a str>,
+    pub components: Vec<Vec<&'a str>>,
+    pub subcomponents: Vec<Vec<Vec<&'a str>>>,
 }
 
 impl<'a> Field<'a> {
@@ -20,19 +21,29 @@ impl<'a> Field<'a> {
         delims: &Separators,
     ) -> Result<Field<'a>, Hl7ParseError> {
         let input = input.into();
-        let components = input.split(delims.component).collect::<Vec<&'a str>>();
-        let subcomponents = components
-            .iter()
-            .map(|c| c.split(delims.subcomponent).collect::<Vec<&'a str>>())
+        let repeats: Vec<&'a str> = input
+            .split(delims.repeat)
             .collect();
-
+        let components: Vec<Vec<&'a str>> = repeats
+            .iter()
+            .map(|r| r.split(delims.component).collect::<Vec<&'a str>>())
+            .collect();
+        let subcomponents: Vec<Vec<Vec<&'a str>>> = components
+            .iter()
+            .map(|r|{
+                r.iter().map(|c| 
+                    c.split(delims.subcomponent).collect::<Vec<&'a str>>()
+                )
+                .collect::<Vec<Vec<&'a str>>>()
+            })
+            .collect();
         let field = Field {
             source: input,
             delims: *delims,
+            repeats,
             components,
             subcomponents,
         };
-
         Ok(field)
     }
 
@@ -125,75 +136,115 @@ impl<'a> Clone for Field<'a> {
     }
 }
 
-/// Access string reference of a Field component by numeric index
 impl<'a> Index<usize> for Field<'a> {
     type Output = &'a str;
+    /// Access string reference of a Field component by numeric index
     fn index(&self, idx: usize) -> &Self::Output {
-        if idx > self.components.len() - 1 {
+        if idx > self.repeats.len() - 1 {
             return &""; //TODO: We're returning &&str here which doesn't seem right?!?
         }
 
-        &self.components[idx]
+        &self.repeats[idx]
     }
 }
 
-/// Access string reference of a Field subcomponent by numeric index
 impl<'a> Index<(usize, usize)> for Field<'a> {
     type Output = &'a str;
+    /// Access string reference of a Field subcomponent by numeric index
     fn index(&self, idx: (usize, usize)) -> &Self::Output {
-        if idx.0 > self.components.len() - 1 || idx.1 > self.subcomponents[idx.0].len() - 1 {
+        if idx.0 > self.repeats.len() - 1 || idx.1 > self.components[idx.0].len() - 1 {
             return &""; //TODO: We're returning &&str here which doesn't seem right?!?
         }
 
-        &self.subcomponents[idx.0][idx.1]
+        &self.components[idx.0][idx.1]
     }
 }
 
-/// DEPRECATED. Access string reference of a Field component by String index
-/// Adjust the index by one as medical people do not count from zero
-#[allow(useless_deprecated)]
-#[deprecated(note = "This will be removed in a future version")]
+impl<'a> Index<(usize, usize, usize)> for Field<'a> {
+    type Output = &'a str;
+    /// Access string reference of a Field subcomponent by numeric index
+    fn index(&self, idx: (usize, usize, usize)) -> &Self::Output {
+        if idx.0 > self.repeats.len() - 1
+            || idx.1 > self.components[idx.0].len() - 1
+            || idx.2 > self.subcomponents[idx.0][idx.1].len() - 1 {
+            return &""; //TODO: We're returning &&str here which doesn't seem right?!?
+        }
+
+        &self.subcomponents[idx.0][idx.1][idx.2]
+    }
+}
+
+
+#[cfg(feature = "string_index")]
 impl<'a> Index<String> for Field<'a> {
     type Output = &'a str;
+
+    /// Access string reference of a Field component by String index
+    #[cfg(feature = "string_index")]
     fn index(&self, sidx: String) -> &Self::Output {
         let parts = sidx.split('.').collect::<Vec<&str>>();
+        match parts.len() {
+            1 => {
+                let stringnums = parts[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+                let idx: usize = stringnums.parse().unwrap();
 
-        if parts.len() == 1 {
-            let stringnums = parts[0]
-                .chars()
-                .filter(|c| c.is_digit(10))
-                .collect::<String>();
-            let idx: usize = stringnums.parse().unwrap();
+                &self[idx - 1]
+            },
+            2 => {
+                let stringnums = parts[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
 
-            &self[idx - 1]
-        } else if parts.len() == 2 {
-            let stringnums = parts[0]
-                .chars()
-                .filter(|c| c.is_digit(10))
-                .collect::<String>();
+                let idx0: usize = stringnums.parse().unwrap();
 
-            let idx0: usize = stringnums.parse().unwrap();
+                let stringnums = parts[1]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
 
-            let stringnums = parts[1]
-                .chars()
-                .filter(|c| c.is_digit(10))
-                .collect::<String>();
+                let idx1: usize = stringnums.parse().unwrap();
 
-            let idx1: usize = stringnums.parse().unwrap();
+                &self[(idx0 - 1, idx1 - 1)]
+            },
+            3 => {
+                let stringnums = parts[0]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
 
-            &self[(idx0 - 1, idx1 - 1)]
-        } else {
-            &""
+                let idx0: usize = stringnums.parse().unwrap();
+
+                let stringnums = parts[1]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+
+                let idx1: usize = stringnums.parse().unwrap();
+
+                let stringnums = parts[2]
+                    .chars()
+                    .filter(|c| c.is_digit(10))
+                    .collect::<String>();
+
+                let idx2: usize = stringnums.parse().unwrap();
+
+                &self[(idx0 - 1, idx1 - 1, idx2 - 1)]
+            },
+            _ => &""
         }
     }
 }
 
+#[cfg(feature = "string_index")]
 impl<'a> Index<&str> for Field<'a> {
     type Output = &'a str;
 
-    /// DEPRECATED.  Access Segment, Field, or sub-field string references by string index
-    #[allow(useless_deprecated)]
-    #[deprecated(note = "This will be removed in a future version")]
+    /// Access Segment, Field, or sub-field string references by string index
+    #[cfg(feature = "string_index")]
     fn index(&self, idx: &str) -> &Self::Output {
         &self[String::from(idx)]
     }
@@ -255,20 +306,25 @@ mod tests {
             _ => assert!(false),
         }
     }
+    #[test]
+    fn test_parse_repeats() {
+        let d = Separators::default();
+        let f = Field::parse_mandatory(Some("x&x^y&y~a&a^b&b"), &d).unwrap();
+        assert_eq!(f.repeats.len(), 2)
+    }
 
     #[test]
     fn test_parse_components() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy"), &d).unwrap();
-
-        assert_eq!(f.components.len(), 2)
+        assert_eq!(f.components[0].len(), 2)
     }
 
     #[test]
     fn test_parse_subcomponents() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
-        assert_eq!(f.subcomponents[1].len(), 2)
+        assert_eq!(f.subcomponents[0][1].len(), 2)
     }
 
     #[test]
@@ -289,18 +345,31 @@ mod tests {
     fn test_uint_index() {
         let d = Separators::default();
         let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
-        assert_eq!(f[1], "yyy&zzz");
-        assert_eq!(f[(1, 1)], "zzz");
+        assert_eq!(f[(0, 1)], "yyy&zzz");
+        assert_eq!(f[(0, 1, 1)], "zzz");
     }
 
     #[test]
-    fn test_string_index() {
+    fn test_string_query() {
         let d = Separators::default();
-        let f = Field::parse_mandatory(Some("xxx^yyy&zzz"), &d).unwrap();
+        let f = Field::parse_mandatory(Some("x&x^y&y~a&a^b&b"), &d).unwrap();
         let idx0 = String::from("R2");
         let oob = "R2.C3";
-        assert_eq!(f.query(&*idx0), "yyy&zzz");
-        assert_eq!(f.query("R2.C2"), "zzz");
+        assert_eq!(f.query(&*idx0), "a&a^b&b");
+        assert_eq!(f.query("R2.C2"), "b&b");
         assert_eq!(f.query(oob), "");
+    }
+
+    #[cfg(feature = "string_index")]
+    mod string_index_tests {
+        use super::*;
+        #[test]
+        fn test_string_index() {
+            let d = Separators::default();
+            let f = Field::parse_mandatory(Some("x&x^y&y~a&a^b&b"), &d).unwrap();
+            assert_eq!(f["R2"], "a&a^b&b");
+            assert_eq!(f["R2.C2"], "b&b");
+            assert_eq!(f["R2.C3"], "");
+        }
     }
 }

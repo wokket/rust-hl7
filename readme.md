@@ -15,8 +15,8 @@ This library is trying to provide the _tooling_ you need to build robust HL7 bas
 - [x] Initially use hl7 default separator chars
 - [x] Use separator chars from the message
 - [X] Add support for sub-field (component/subcomponent) items
-    - [ ] Field repeats (via `~`) are currently missing ([#26](https://github.com/wokket/rust-hl7/issues/26))
-- [X] Initially, avoid any per-segment knowledge, requirement to read the spec too much etc.
+    - [x] Field repeats (via `~`)
+- [x] Initially, avoid any per-segment knowledge, requirement to read the spec too much etc.
     - Implementing all the segments, across all the hl7 versions, version-specific parsing etc is tooooo much while we're getting started.
 - [-] Add support for [HL7 escape sequences](https://www.lyniate.com/knowledge-hub/hl7-escape-sequences/) ([#22](https://github.com/wokket/rust-hl7/issues/22))
     - [x] Decoding of the most common escape sequences including `\E\`, `\R\`, `\S\` & `\T\`
@@ -28,5 +28,5 @@ This library is trying to provide the _tooling_ you need to build robust HL7 bas
 - [x] Parse a message using a `TryFrom<&str>` impl rather than a dedicated parser
 - [x] Index into messages using HL7 string index notation and binary methods
     - [x] Index into sub-fields using HL7 string index notation and binary methods
-    - [X] Index into the segment enum using HL7 string index notation and binary methods
-- [ ] Implement buffer-copy-free generic indexing into MSH
+    - [x] Index into the segment enum using HL7 string index notation and binary methods
+- [x] Implement buffer-copy-free generic indexing into MSH

@@ -26,7 +26,7 @@ impl<'a> Message<'a> {
         Message {
             source,
             segments,
-            separators
+            separators,
         }
     }
     /// Extracts header element for external use
@@ -79,31 +79,6 @@ impl<'a> Message<'a> {
     /// Gets the delimiter information for this Message
     pub fn get_separators(&self) -> Separators {
         self.separators
-    }
-
-    /// Access Segment, Field, or sub-field string references by string index
-    pub fn query<'b, S>(&self, idx: S) -> &'a str
-    where
-        S: Into<&'b str>,
-    {
-        let idx = idx.into();
-
-        // Parse index elements
-        let indices: Vec<&str> = idx.split('.').collect();
-        let seg_name = indices[0];
-        // Find our first segment without offending the borow checker
-        let seg_index = self
-            .segments
-            .iter()
-            .position(|r| &r.as_str()[..seg_name.len()] == seg_name)
-            .expect("Segment not found");
-        let seg = &self.segments[seg_index];
-        if indices.len() < 2 {
-            seg.source
-        } else {
-            let query = indices[1..].join(".");
-            seg.query(&*query)
-        }
     }
 }
 
@@ -271,17 +246,6 @@ mod tests {
         let msg1 = Message::new(hl7);
 
         assert_eq!(msg0, msg1);
-        Ok(())
-    }
-
-    #[test]
-    fn ensure_query() -> Result<(), Hl7ParseError> {
-        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment^sub&segment";
-        let msg = Message::try_from(hl7)?;
-        assert_eq!(msg.query("OBR.F1.R1.C2"), "sub&segment");
-        assert_eq!(msg.query(&*"OBR.F1.R1.C1".to_string()), "segment"); // Test the Into param with a String
-        assert_eq!(msg.query(&*String::from("OBR.F1.R1.C1")), "segment");
-        assert_eq!(msg.query("MSH.F1"), "^~\\&"); 
         Ok(())
     }
 

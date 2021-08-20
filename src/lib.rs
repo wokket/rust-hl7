@@ -14,8 +14,8 @@ pub mod escape_sequence;
 pub mod fields;
 pub mod message;
 pub mod segments;
-pub mod separators;
 pub mod selector;
+pub mod separators;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Hl7ParseError {

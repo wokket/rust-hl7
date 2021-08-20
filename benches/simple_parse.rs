@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use rusthl7::{message::*};
+use rusthl7::{message::*, selector};
 use std::convert::TryFrom;
 
 fn get_sample_message() -> &'static str {
@@ -31,7 +31,7 @@ fn get_msh_and_read_field(c: &mut Criterion) {
         let msh = m.msh().unwrap();
 
         b.iter(|| {
-            let app =  msh.msh_3_sending_application.as_ref().unwrap(); // direct variable access
+            let app = msh.msh_3_sending_application.as_ref().unwrap(); // direct variable access
             assert_eq!("GHH LAB", app.value());
         })
     });
@@ -54,7 +54,7 @@ fn get_pid_and_read_field_via_query(c: &mut Criterion) {
         let m = Message::try_from(get_sample_message()).unwrap();
 
         b.iter(|| {
-            let _val = m.query("PID.F3"); // query via Message
+            let _val = selector::query(&m, "PID.F3"); // query via Message
             assert_eq!(_val, "555-44-4444"); // lookup from vec
         })
     });

@@ -89,7 +89,7 @@ impl<'a> Message<'a> {
         let idx = idx.into();
 
         // Parse index elements
-        let indices: Vec<&str> = idx.split('.').collect();
+        let indices = Self::parse_query_string(idx);
         let seg_name = indices[0];
         // Find our first segment without offending the borow checker
         let seg_index = self
@@ -104,6 +104,55 @@ impl<'a> Message<'a> {
             let query = indices[1..].join(".");
             seg.query(&*query)
         }
+    }
+
+    /// Parse query/index string to fill-in missing values.
+    /// Required when conumer requests "PID.F3.C1" to pass integers down
+    /// to the usize indexers at the appropriate positions
+    pub fn parse_query_string(query: &str) -> Vec<&str> {
+        fn query_idx_pos(indices: &Vec<&str>, idx: &str) -> Option<usize> {
+            indices[1..]
+                .iter()
+                .position(|r| r[0..1].to_uppercase() == idx )
+        }
+        let indices: Vec<&str> = query.split('.').collect();
+        // Leave segment name untouched - complex match
+        let mut res = vec![indices[0]];
+        // Get segment positions, if any
+        let sub_pos = query_idx_pos(&indices, "S");
+        let com_pos = query_idx_pos(&indices, "C");
+        let rep_pos = query_idx_pos(&indices, "R");
+        let fld_pos = query_idx_pos(&indices, "F");
+        // Push segment values to result, returning early if possible
+        match fld_pos{
+            Some(f) => res.push(indices[f + 1]),
+            None => {
+                // If empty but we have subsections, default to F1
+                if rep_pos.is_some() || com_pos.is_some() || sub_pos.is_some() {res.push("F1")}
+                else { return res}
+            }
+        };
+        match rep_pos {
+            Some(r) => res.push(indices[r + 1]),
+            None => {
+                // If empty but we have subsections, default to R1
+                if com_pos.is_some() || sub_pos.is_some() {res.push("R1")}
+                else {return res}
+            }
+        };
+        match com_pos {
+            Some(c) => res.push(indices[c + 1]),
+            None => {
+                // If empty but we have a subcomponent, default to C1
+                if sub_pos.is_some() {res.push("C1")}
+                else {return res}
+            }
+        };
+        match sub_pos {
+            Some(s) => res.push(indices[s + 1]),
+            None => {}
+        };
+        res
     }
 }
 
@@ -173,7 +222,7 @@ impl<'a> Index<String> for Message<'a> {
     #[cfg(feature = "string_index")]
     fn index(&self, idx: String) -> &Self::Output {
         // Parse index elements
-        let indices: Vec<&str> = idx.split('.').collect();
+        let indices = Self::parse_query_string(&idx);
         let seg_name = indices[0];
         // Find our first segment without offending the borow checker
         let seg_index = self
@@ -295,7 +344,9 @@ mod tests {
             assert_eq!(msg["OBR.F1.R1.C2"], "sub&segment");
             assert_eq!(msg[&*"OBR.F1.R1.C1".to_string()], "segment"); // Test the Into param with a String
             assert_eq!(msg[String::from("OBR.F1.R1.C1")], "segment");
-            assert_eq!(msg[String::from("OBR.F1.R1.C2.S2")], "segment");
+            assert_eq!(msg[String::from("OBR.F1.C1")], "segment");    // Test missing element in selector
+            assert_eq!(msg[String::from("OBR.F1.R1.C2.S1")], "sub");
+            println!("{}", Message::parse_query_string("MSH.F2").join("."));
             assert_eq!(msg["MSH.F2"], "^~\\&");
             Ok(())
         }

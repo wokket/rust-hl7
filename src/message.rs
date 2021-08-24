@@ -26,7 +26,7 @@ impl<'a> Message<'a> {
         Message {
             source,
             segments,
-            separators
+            separators,
         }
     }
     /// Extracts header element for external use
@@ -110,10 +110,10 @@ impl<'a> Message<'a> {
     /// Required when conumer requests "PID.F3.C1" to pass integers down
     /// to the usize indexers at the appropriate positions
     pub fn parse_query_string(query: &str) -> Vec<&str> {
-        fn query_idx_pos(indices: &Vec<&str>, idx: &str) -> Option<usize> {
+        fn query_idx_pos(indices: &[&str], idx: &str) -> Option<usize> {
             indices[1..]
                 .iter()
-                .position(|r| r[0..1].to_uppercase() == idx )
+                .position(|r| r[0..1].to_uppercase() == idx)
         }
         let indices: Vec<&str> = query.split('.').collect();
         // Leave segment name untouched - complex match
@@ -124,34 +124,42 @@ impl<'a> Message<'a> {
         let rep_pos = query_idx_pos(&indices, "R");
         let fld_pos = query_idx_pos(&indices, "F");
         // Push segment values to result, returning early if possible
-        match fld_pos{
+        match fld_pos {
             Some(f) => res.push(indices[f + 1]),
             None => {
                 // If empty but we have subsections, default to F1
-                if rep_pos.is_some() || com_pos.is_some() || sub_pos.is_some() {res.push("F1")}
-                else { return res}
+                if rep_pos.is_some() || com_pos.is_some() || sub_pos.is_some() {
+                    res.push("F1")
+                } else {
+                    return res;
+                }
             }
         };
         match rep_pos {
             Some(r) => res.push(indices[r + 1]),
             None => {
                 // If empty but we have subsections, default to R1
-                if com_pos.is_some() || sub_pos.is_some() {res.push("R1")}
-                else {return res}
+                if com_pos.is_some() || sub_pos.is_some() {
+                    res.push("R1")
+                } else {
+                    return res;
+                }
             }
         };
         match com_pos {
             Some(c) => res.push(indices[c + 1]),
             None => {
                 // If empty but we have a subcomponent, default to C1
-                if sub_pos.is_some() {res.push("C1")}
-                else {return res}
+                if sub_pos.is_some() {
+                    res.push("C1")
+                } else {
+                    return res;
+                }
             }
         };
-        match sub_pos {
-            Some(s) => res.push(indices[s + 1]),
-            None => {}
-        };
+        if let Some(s) = sub_pos {
+            res.push(indices[s + 1])
+        }
         res
     }
 }
@@ -330,7 +338,7 @@ mod tests {
         assert_eq!(msg.query("OBR.F1.R1.C2"), "sub&segment");
         assert_eq!(msg.query(&*"OBR.F1.R1.C1".to_string()), "segment"); // Test the Into param with a String
         assert_eq!(msg.query(&*String::from("OBR.F1.R1.C1")), "segment");
-        assert_eq!(msg.query("MSH.F1"), "^~\\&"); 
+        assert_eq!(msg.query("MSH.F1"), "^~\\&");
         Ok(())
     }
 
@@ -344,7 +352,7 @@ mod tests {
             assert_eq!(msg["OBR.F1.R1.C2"], "sub&segment");
             assert_eq!(msg[&*"OBR.F1.R1.C1".to_string()], "segment"); // Test the Into param with a String
             assert_eq!(msg[String::from("OBR.F1.R1.C1")], "segment");
-            assert_eq!(msg[String::from("OBR.F1.C1")], "segment");    // Test missing element in selector
+            assert_eq!(msg[String::from("OBR.F1.C1")], "segment"); // Test missing element in selector
             assert_eq!(msg[String::from("OBR.F1.R1.C2.S1")], "sub");
             println!("{}", Message::parse_query_string("MSH.F2").join("."));
             assert_eq!(msg["MSH.F2"], "^~\\&");

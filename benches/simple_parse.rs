@@ -25,18 +25,6 @@ fn get_segments_by_name(c: &mut Criterion) {
     });
 }
 
-fn get_msh_and_read_field(c: &mut Criterion) {
-    c.bench_function("Read Field from MSH (variable)", |b| {
-        let m = Message::try_from(get_sample_message()).unwrap();
-        let msh = m.msh().unwrap();
-
-        b.iter(|| {
-            let app =  msh.msh_3_sending_application.as_ref().unwrap(); // direct variable access
-            assert_eq!("GHH LAB", app.value());
-        })
-    });
-}
-
 fn get_pid_and_read_field_via_vec(c: &mut Criterion) {
     c.bench_function("Read Field from PID (lookup)", |b| {
         let m = Message::try_from(get_sample_message()).unwrap();
@@ -77,7 +65,6 @@ criterion_group!(
     benches,
     message_parse,
     get_segments_by_name,
-    get_msh_and_read_field,
     get_pid_and_read_field_via_vec,
     get_pid_and_read_field_via_query,
     get_pid_and_read_field_via_index
@@ -88,7 +75,6 @@ criterion_group!(
     benches,
     message_parse,
     get_segments_by_name,
-    get_msh_and_read_field,
     get_pid_and_read_field_via_vec,
     get_pid_and_read_field_via_query
 );

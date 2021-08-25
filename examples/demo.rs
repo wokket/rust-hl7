@@ -2,13 +2,12 @@
  A short example demonstrating one way to use this library for HL7 processing.
 */
 
-use std::{convert::TryFrom, error::Error};
 use rusthl7::{escape_sequence::EscapeSequence, message::Message};
+use std::{convert::TryFrom, error::Error};
 
 fn main() -> Result<(), Box<dyn Error>> {
-    
-    // Normally message would come over the wire from a remote service etc.  
-    // Consider using the hl7-mllp-code crate or similar to make building those network services easier.
+    // Normally message would come over the wire from a remote service etc.
+    // Consider using the hl7-mllp-codec crate or similar to make building those network services easier.
     let hl7_string = get_sample_message();
 
     // Parse the string into a structured entity

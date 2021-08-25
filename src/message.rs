@@ -1,4 +1,4 @@
-use super::segments::{MshSegment, Segment};
+use super::segments::Segment;
 use super::separators::Separators;
 use super::*;
 use std::convert::TryFrom;
@@ -28,13 +28,6 @@ impl<'a> Message<'a> {
             segments,
             separators,
         }
-    }
-    /// Extracts header element for external use
-    pub fn msh(&self) -> Result<MshSegment, Hl7ParseError> {
-        let seg = self.segments_by_name("MSH").unwrap()[0];
-        let segment =
-            MshSegment::parse(seg.source, &self.separators).expect("Failed to parse MSH segment");
-        Ok(segment)
     }
 
     /// Extracts generic elements for external use by matching first field to name
@@ -280,14 +273,6 @@ mod tests {
     }
 
     #[test]
-    fn ensure_msh_is_returned() -> Result<(), Hl7ParseError> {
-        let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
-        let msg = Message::try_from(hl7)?;
-
-        assert_eq!(msg.msh().unwrap().msh_1_field_separator, '|');
-        Ok(())
-    }
-    #[test]
     fn ensure_segments_convert_to_vectors() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
         let msg = Message::try_from(hl7)?;
@@ -307,8 +292,8 @@ mod tests {
         let dolly = msg.clone();
         let dolly = dolly.to_owned();
         assert_eq!(
-            msg.msh().unwrap().msh_7_date_time_of_message,
-            dolly.msh().unwrap().msh_7_date_time_of_message
+            msg.query("MSH.F7"),
+            dolly.query("MSH.F7")
         );
         Ok(())
     }

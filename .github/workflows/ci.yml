@@ -21,7 +21,7 @@ jobs:
       uses: Swatinem/rust-cache@v1.3.0
     
     - name: Compile
-      run: cargo test --no-run --locked
+      run: cargo test --no-run
     
     - name: Test
       run: cargo test --all-features -- --nocapture --quiet

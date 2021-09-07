@@ -16,9 +16,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    
+    - name: Cache Dependencies
+      uses: Swatinem/rust-cache@v1.3.0
+    
     - name: Compile
       run: cargo test --no-run --locked
+    
     - name: Test
       run: cargo test --all-features -- --nocapture --quiet
+    
     - name: Run Benchmarks
       run: cargo bench --all-features

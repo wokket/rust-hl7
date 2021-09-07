@@ -1,6 +1,6 @@
 status = [
-    "Rust (ubuntu-latest)",
-    "Rust (windows-latest)",
+    "build (ubuntu-latest)",
+    "build (windows-latest)",
 ]
 delete_merged_branches = true
 timeout_sec = 600 # 10 min

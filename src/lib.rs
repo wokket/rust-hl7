@@ -10,11 +10,19 @@ This crate tries to provide the tools to build HL7 systems without dictating _ho
 
 */
 
-pub mod escape_sequence;
-pub mod fields;
-pub mod message;
-pub mod segments;
-pub mod separators;
+mod escape_sequence;
+mod fields;
+mod message;
+mod segments;
+mod separators;
+
+// re-exports to simplify namespacing (#25)
+pub use fields::Field;
+pub use message::Message;
+pub use segments::Segment;
+
+pub use escape_sequence::EscapeSequence;
+pub use separators::Separators;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Hl7ParseError {

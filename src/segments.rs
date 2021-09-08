@@ -62,7 +62,7 @@ impl<'a> Segment<'a> {
                     .collect::<String>();
                 let idx: usize = stringnum.parse().unwrap();
                 if idx > self.fields.len() - 1 {
-                    return ""
+                    return "";
                 }
                 let field = &self.fields[idx];
                 let query = sections[1..].join(".");
@@ -95,9 +95,7 @@ impl<'a> Index<(usize, usize)> for Segment<'a> {
     type Output = &'a str;
     /// Access Field component as string reference
     fn index(&self, fidx: (usize, usize)) -> &Self::Output {
-        if fidx.0 > self.fields.len() - 1
-            || fidx.1 > self.fields[fidx.0].components.len() - 1
-        {
+        if fidx.0 > self.fields.len() - 1 || fidx.1 > self.fields[fidx.0].components.len() - 1 {
             return &"";
         }
         &self.fields[fidx.0][fidx.1]
@@ -136,19 +134,19 @@ impl<'a> Index<&str> for Segment<'a> {
         if self.fields[0].source == "MSH" {
             if idx == 1 {
                 // return &&self.source[3..3]; //TODO figure out how to return a string ref safely
-                return &"|"
+                return &"|";
             } else {
                 idx = idx - 1
             }
         }
         match sections.len() {
-            1 => {
-                &self[idx]
-            }
+            1 => &self[idx],
             _ => {
                 if idx < self.fields.len() {
                     &self.fields[idx][sections[1..].join(".")]
-                } else { &"" }
+                } else {
+                    &""
+                }
             }
         }
     }
@@ -167,7 +165,7 @@ impl<'a> Index<String> for Segment<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{message::Message, segments::*, separators::Separators, Hl7ParseError};
+    use crate::Message;
     use std::convert::TryFrom;
 
     #[test]
@@ -207,10 +205,10 @@ mod tests {
             let msg = Message::try_from(hl7).unwrap();
             let x = &msg.segments[1];
             let (f, c, s, oob) = (
-                x["F1"],                       // &str
-                x["F1.R1"],                    // &str
-                x["F1.R1.C1".to_owned()],      // String
-                x["F1.R2.C2"]
+                x["F1"],                  // &str
+                x["F1.R1"],               // &str
+                x["F1.R1.C1".to_owned()], // String
+                x["F1.R2.C2"],
             );
             assert_eq!(f, "segment^sub&segment");
             assert_eq!(c, "segment^sub&segment");

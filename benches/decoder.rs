@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use rusthl7::{escape_sequence::*, separators::Separators};
+use rusthl7::{EscapeSequence, Separators};
 
 // Note that we;re calkling decode on a whole message here, although it would normally be on an individual field...
 // this is just to make it work a bit harder on a larger dataset, not because it makes sense in a HL7 sense
@@ -20,7 +20,7 @@ fn no_sequences(c: &mut Criterion) {
 fn create_struct(c: &mut Criterion) {
     c.bench_function("Create struct", |b| {
         let delims = Separators::default();
-        
+
         b.iter(|| {
             let _ = EscapeSequence::new(delims);
         })

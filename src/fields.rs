@@ -21,20 +21,17 @@ impl<'a> Field<'a> {
         delims: &Separators,
     ) -> Result<Field<'a>, Hl7ParseError> {
         let input = input.into();
-        let repeats: Vec<&'a str> = input
-            .split(delims.repeat)
-            .collect();
+        let repeats: Vec<&'a str> = input.split(delims.repeat).collect();
         let components: Vec<Vec<&'a str>> = repeats
             .iter()
             .map(|r| r.split(delims.component).collect::<Vec<&'a str>>())
             .collect();
         let subcomponents: Vec<Vec<Vec<&'a str>>> = components
             .iter()
-            .map(|r|{
-                r.iter().map(|c| 
-                    c.split(delims.subcomponent).collect::<Vec<&'a str>>()
-                )
-                .collect::<Vec<Vec<&'a str>>>()
+            .map(|r| {
+                r.iter()
+                    .map(|c| c.split(delims.subcomponent).collect::<Vec<&'a str>>())
+                    .collect::<Vec<Vec<&'a str>>>()
             })
             .collect();
         let field = Field {
@@ -166,14 +163,14 @@ impl<'a> Index<(usize, usize, usize)> for Field<'a> {
     fn index(&self, idx: (usize, usize, usize)) -> &Self::Output {
         if idx.0 > self.repeats.len() - 1
             || idx.1 > self.components[idx.0].len() - 1
-            || idx.2 > self.subcomponents[idx.0][idx.1].len() - 1 {
+            || idx.2 > self.subcomponents[idx.0][idx.1].len() - 1
+        {
             return &""; //TODO: We're returning &&str here which doesn't seem right?!?
         }
 
         &self.subcomponents[idx.0][idx.1][idx.2]
     }
 }
-
 
 #[cfg(feature = "string_index")]
 impl<'a> Index<String> for Field<'a> {
@@ -192,7 +189,7 @@ impl<'a> Index<String> for Field<'a> {
                 let idx: usize = stringnums.parse().unwrap();
 
                 &self[idx - 1]
-            },
+            }
             2 => {
                 let stringnums = parts[0]
                     .chars()
@@ -209,7 +206,7 @@ impl<'a> Index<String> for Field<'a> {
                 let idx1: usize = stringnums.parse().unwrap();
 
                 &self[(idx0 - 1, idx1 - 1)]
-            },
+            }
             3 => {
                 let stringnums = parts[0]
                     .chars()
@@ -233,8 +230,8 @@ impl<'a> Index<String> for Field<'a> {
                 let idx2: usize = stringnums.parse().unwrap();
 
                 &self[(idx0 - 1, idx1 - 1, idx2 - 1)]
-            },
-            _ => &""
+            }
+            _ => &"",
         }
     }
 }

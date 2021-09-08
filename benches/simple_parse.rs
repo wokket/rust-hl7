@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use rusthl7::{message::*};
+use rusthl7::message::*;
 use std::convert::TryFrom;
 
 fn get_sample_message() -> &'static str {

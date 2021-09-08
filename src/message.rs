@@ -291,10 +291,7 @@ mod tests {
         // Verify that we can clone and take ownership
         let dolly = msg.clone();
         let dolly = dolly.to_owned();
-        assert_eq!(
-            msg.query("MSH.F7"),
-            dolly.query("MSH.F7")
-        );
+        assert_eq!(msg.query("MSH.F7"), dolly.query("MSH.F7"));
         Ok(())
     }
 

@@ -2,7 +2,7 @@
  A short example demonstrating one way to use this library for HL7 processing.
 */
 
-use rusthl7::{fields::Field, message::Message, separators::Separators,Hl7ParseError};
+use rusthl7::{fields::Field, message::Message, separators::Separators, Hl7ParseError};
 use std::{convert::TryFrom, error::Error, fmt::Display};
 
 /// The most important Segment, almost all HL7 messages have an MSH (MLLP simple ack I'm looking at you).

@@ -55,7 +55,7 @@ impl<'a> Message<'a> {
     /// ## Example:
     /// ```
     /// # use rusthl7::Hl7ParseError;
-    /// # use rusthl7::message::Message;
+    /// # use rusthl7::Message;
     /// # use std::convert::TryFrom;
     /// # fn main() -> Result<(), Hl7ParseError> {
     /// let source = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4";
@@ -191,7 +191,7 @@ impl<'a> Clone for Message<'a> {
     /// ## Example:
     /// ```
     /// # use rusthl7::Hl7ParseError;
-    /// # use rusthl7::message::Message;
+    /// # use rusthl7::Message;
     /// # use std::convert::TryFrom;
     /// # fn main() -> Result<(), Hl7ParseError> {
     /// let m = Message::try_from("MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4")?;

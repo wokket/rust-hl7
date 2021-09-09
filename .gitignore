@@ -6,3 +6,4 @@ dotnet/bin/
 dotnet/obj/
 dotnet/.vs/
 BenchmarkDotNet.Artifacts/
+cargo-timing*.html

@@ -2,7 +2,7 @@
  A short example demonstrating one way to use this library for HL7 processing.
 */
 
-use rusthl7::{escape_sequence::EscapeSequence, message::Message};
+use rusthl7::{EscapeSequence, Message};
 use std::{convert::TryFrom, error::Error};
 
 fn main() -> Result<(), Box<dyn Error>> {

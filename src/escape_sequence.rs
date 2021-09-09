@@ -10,8 +10,8 @@ use std::borrow::Cow;
 ///
 /// ## Example:
 /// ```
-/// # use rusthl7::escape_sequence::EscapeSequence;
-/// # use rusthl7::separators::Separators;
+/// # use rusthl7::EscapeSequence;
+/// # use rusthl7::Separators;
 /// let delims = Separators::default();
 /// let decoder = EscapeSequence::new(delims);
 /// let hl7_field_value = r#"Obstetrician \T\ Gynaecologist"#;

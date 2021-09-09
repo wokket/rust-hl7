@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.0
+- Breaking Change ([#25](https://github.com/wokket/rust-hl7/issues/25)): Moved the core structs to the top-level module to avoid the noisy using statements.
+
 ## 0.5.0
  - Add `query` functions to replace the string based `Index` impls in the version version.  These are functionally identical to the string `Index` implementations, but avoid some lifetime issues (returning `&&str`) and have visible documentation.
  - Add `EscapeSequence` struct to support decoding [escape sequences](https://www.lyniate.com/knowledge-hub/hl7-escape-sequences/) back to their original values.

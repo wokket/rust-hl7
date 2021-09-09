@@ -165,7 +165,7 @@ impl<'a> Index<String> for Segment<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{message::Message, segments::*, separators::Separators, Hl7ParseError};
+    use crate::Message;
     use std::convert::TryFrom;
 
     #[test]

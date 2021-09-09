@@ -2,7 +2,7 @@ name: CI Ubunutu
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, staging, trying ]
   pull_request:
     branches: [ master ]
 
@@ -12,13 +12,23 @@ env:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose --all-features
+    
+    - name: Cache Dependencies
+      uses: Swatinem/rust-cache@v1.3.0
+    
+    - name: Compile
+      run: cargo test --no-run
+    
+    - name: Test
+      run: cargo test --all-features -- --nocapture --quiet
+    
     - name: Run Benchmarks
       run: cargo bench --all-features

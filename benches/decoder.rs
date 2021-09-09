@@ -20,7 +20,7 @@ fn no_sequences(c: &mut Criterion) {
 fn create_struct(c: &mut Criterion) {
     c.bench_function("Create struct", |b| {
         let delims = Separators::default();
-        
+
         b.iter(|| {
             let _ = EscapeSequence::new(delims);
         })

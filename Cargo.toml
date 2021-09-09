@@ -1,6 +1,6 @@
 [package]
 name = "rust-hl7"
-version = "0.5.0-pre"
+version = "0.5.0"
 authors = ["wokket <github@wokket.com>"]
 edition = "2018"
 description = "HL7 Parser and object builder? query'er? - experimental only at any rate"

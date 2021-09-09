@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use rusthl7::{message::*};
+use rusthl7::message::*;
 use std::convert::TryFrom;
 
 fn get_sample_message() -> &'static str {
@@ -21,18 +21,6 @@ fn get_segments_by_name(c: &mut Criterion) {
         b.iter(|| {
             let _segs = m.segments_by_name("OBR").unwrap();
             //assert!(segs.len() == 1);
-        })
-    });
-}
-
-fn get_msh_and_read_field(c: &mut Criterion) {
-    c.bench_function("Read Field from MSH (variable)", |b| {
-        let m = Message::try_from(get_sample_message()).unwrap();
-        let msh = m.msh().unwrap();
-
-        b.iter(|| {
-            let app =  msh.msh_3_sending_application.as_ref().unwrap(); // direct variable access
-            assert_eq!("GHH LAB", app.value());
         })
     });
 }
@@ -77,7 +65,6 @@ criterion_group!(
     benches,
     message_parse,
     get_segments_by_name,
-    get_msh_and_read_field,
     get_pid_and_read_field_via_vec,
     get_pid_and_read_field_via_query,
     get_pid_and_read_field_via_index
@@ -88,7 +75,6 @@ criterion_group!(
     benches,
     message_parse,
     get_segments_by_name,
-    get_msh_and_read_field,
     get_pid_and_read_field_via_vec,
     get_pid_and_read_field_via_query
 );

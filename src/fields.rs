@@ -8,7 +8,7 @@ use std::ops::Index;
 #[derive(Debug, PartialEq)]
 pub struct Field<'a> {
     pub source: &'a str,
-    pub delims: Separators,
+    delims: Separators,
     pub repeats: Vec<&'a str>,
     pub components: Vec<Vec<&'a str>>,
     pub subcomponents: Vec<Vec<Vec<&'a str>>>,
@@ -44,7 +44,9 @@ impl<'a> Field<'a> {
         Ok(field)
     }
 
-    /// Used to hide the removal of NoneError for #2...  If passed `Some()` value it returns a field with that value.  If passed `None() it returns an `Err(Hl7ParseError::MissingRequiredValue{})`
+    /// Used to hide the removal of NoneError for #2...  
+    /// If passed `Some()` value it returns a field with that value.  
+    /// If passed `None` it returns an `Err(Hl7ParseError::MissingRequiredValue{})`
     pub fn parse_mandatory(
         input: Option<&'a str>,
         delims: &Separators,
@@ -57,6 +59,10 @@ impl<'a> Field<'a> {
 
     /// Converts a possibly blank string into a possibly blank field!  
     /// Note this handles optional fields, not the nul (`""`) value.
+    /// Specfically:
+    /// - If passed `None` it returns `Ok(None)`
+    /// - If passed `Some("")` it returns `Ok(None)`
+    /// - If Passed `Some(real_value)` it returns `Ok(Some(Field))`
     pub fn parse_optional(
         input: Option<&'a str>,
         delims: &Separators,
@@ -69,14 +75,22 @@ impl<'a> Field<'a> {
     }
 
     /// Compatibility method to get the underlying value of this field.
+    /// NOTE that this is deprecated as a duplicate of  [`Field::as_str()`].
+    ///
+    /// This function was chosen as the deprecation victim as a future version of the library may include strongly typed Field's (eg DateTime)
+    /// at which point a generically typed 'value()' function will need to be implemented.
     #[inline]
+    #[deprecated(
+        since = "0.6.0",
+        note = "This function is a duplicate of the `as_str()` function which should be used instead."
+    )]
     pub fn value(&self) -> &'a str {
         self.source
     }
 
-    /// Export value to str
+    /// Gets the raw string value that was used to create this field.  This method does not allocate.
     #[inline]
-    pub fn as_str(&self) -> &'a str {
+    pub fn as_str(&'a self) -> &'a str {
         self.source
     }
 
@@ -279,7 +293,7 @@ mod tests {
 
         //an empty string (as seen when `split()`ing) should be none
         match Field::parse_optional(Some("xxx"), &d) {
-            Ok(Some(field)) => assert_eq!(field.value(), "xxx"),
+            Ok(Some(field)) => assert_eq!(field.as_str(), "xxx"),
             _ => assert!(false),
         }
     }
@@ -289,7 +303,7 @@ mod tests {
         let d = Separators::default();
 
         match Field::parse_mandatory(Some("xxx"), &d) {
-            Ok(field) => assert_eq!(field.value(), "xxx"),
+            Ok(field) => assert_eq!(field.as_str(), "xxx"),
             _ => assert!(false),
         }
     }

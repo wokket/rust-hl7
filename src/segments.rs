@@ -1,4 +1,4 @@
-use super::{fields::Field, separators::Separators, Hl7ParseError};
+use crate::{Field, Hl7ParseError, Separators};
 use std::fmt::Display;
 use std::ops::Index;
 
@@ -6,35 +6,69 @@ use std::ops::Index;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Segment<'a> {
     pub source: &'a str,
-    pub delim: char,
+    delim: char,
     pub fields: Vec<Field<'a>>,
 }
 
 impl<'a> Segment<'a> {
-    /// Convert the given line of text into a Segment.
+    /// Convert the given line of text into a Segment.  NOTE: This is not normally needed to be called directly by
+    /// consumers but is used indirectly via [`crate::Message::new()`].
     pub fn parse<S: Into<&'a str>>(
         input: S,
         delims: &Separators,
     ) -> Result<Segment<'a>, Hl7ParseError> {
+        // non-generic inner to reduce compile times/code bloat
+        fn inner<'a>(input: &'a str, delims: &Separators) -> Result<Segment<'a>, Hl7ParseError> {
+            let fields: Result<Vec<Field<'a>>, Hl7ParseError> = input
+                .split(delims.field)
+                .map(|line| Field::parse(line, delims))
+                .collect();
+
+            let fields = fields?;
+            let seg = Segment {
+                source: input,
+                delim: delims.segment,
+                fields,
+            };
+            Ok(seg)
+        }
+
         let input = input.into();
-
-        let fields: Result<Vec<Field<'a>>, Hl7ParseError> = input
-            .split(delims.field)
-            .map(|line| Field::parse(line, delims))
-            .collect();
-
-        let fields = fields?;
-        let seg = Segment {
-            source: input,
-            delim: delims.segment,
-            fields,
-        };
-        Ok(seg)
+        inner(input, delims)
     }
 
-    /// Export source to str
+    /// Get the identifier (ie type, or name) for this segment.
+    /// ## Example:
+    /// ```
+    /// # use rusthl7::Hl7ParseError;
+    /// # use rusthl7::{Segment, Separators};
+    /// # fn main() -> Result<(), Hl7ParseError> {
+    /// let segment = Segment::parse("OBR|field1|field2", &Separators::default())?;
+    /// assert_eq!("OBR", segment.identifier());
+    /// # Ok(())
+    /// # }
+    /// ```
+    /// eg a segment `EVN||200708181123||` has an identifer of `EVN`.
+    pub fn identifier(&self) -> &'a str {
+        self.fields[0].source
+    }
+
+    /// Returns the original `&str` used to initialise this Segment.  This method does not allocate.
+    /// ## Example:
+    /// ```
+    /// # use rusthl7::Hl7ParseError;
+    /// # use rusthl7::Message;
+    /// # use std::convert::TryFrom;
+    /// # fn main() -> Result<(), Hl7ParseError> {
+    /// let source = "MSH|^~\\&|GHH LAB|ELAB-3\rOBR|field1|field2";
+    /// let m = Message::try_from(source)?;
+    /// let obr = &m.segments[1];
+    /// assert_eq!("OBR|field1|field2", obr.as_str());
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
-    pub fn as_str(&self) -> &'a str {
+    pub fn as_str(&'a self) -> &'a str {
         self.source
     }
 
@@ -74,7 +108,7 @@ impl<'a> Segment<'a> {
 }
 
 impl<'a> Display for Segment<'a> {
-    /// Required for to_string() and other formatter consumers
+    /// Required for to_string() and other formatter consumers.  This returns the source string that represents the segment.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.source)
     }
@@ -120,7 +154,6 @@ impl<'a> Index<(usize, usize, usize)> for Segment<'a> {
 impl<'a> Index<&str> for Segment<'a> {
     type Output = &'a str;
     /// Access Field as string reference
-    #[cfg(feature = "string_index")]
     fn index(&self, fidx: &str) -> &Self::Output {
         let sections = fidx.split('.').collect::<Vec<&str>>();
         let stringnum = sections[0]
@@ -157,7 +190,6 @@ impl<'a> Index<String> for Segment<'a> {
     type Output = &'a str;
 
     /// Access Segment, Field, or sub-field string references by string index
-    #[cfg(feature = "string_index")]
     fn index(&self, idx: String) -> &Self::Output {
         &self[idx.as_str()]
     }

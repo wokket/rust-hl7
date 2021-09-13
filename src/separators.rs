@@ -4,16 +4,20 @@ use std::str::FromStr;
 
 /// A helper struct to store the separator (delimiter) characters used to parse this message.
 /// Note that HL7 allows each _message_ to define it's own separators, although most messages
-/// use a default set (available from `Separators::default()`)
+/// use a default set (available from [`Separators::default()`])
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Separators {
     /// constant value, spec fixed to '\r' (ASCII 13, 0x0D)
     pub segment: char,
+    /// Field separator char, defaults to `|`
     pub field: char,
+    /// Field repeat separator char, defaults to `~`
     pub repeat: char,
+    /// Component separator char, defaults to `^`
     pub component: char,
+    /// Sub-Component separator char, defaults to `&`
     pub subcomponent: char,
-
+    /// Character used to wrap an [`EscapeSequence`], defaults to `\` (a single back slash)
     pub escape_char: char,
 }
 

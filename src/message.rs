@@ -7,47 +7,76 @@ use std::ops::Index;
 
 /// A Message is an entire HL7 message parsed into it's constituent segments, fields, repeats and subcomponents,
 /// and it consists of (1 or more) Segments.
-/// Message parses the source string into &str slices (minimising copying)
+/// Message parses the source string into `&str` slices (minimising copying) and can be created using either the [`Message::new()`] function or `TryFrom::try_from()` impl.
+/// ## Example:
+/// ```
+/// # use rusthl7::Hl7ParseError;
+/// # use rusthl7::Message;
+/// use std::convert::TryFrom;
+/// # fn main() -> Result<(), Hl7ParseError> {
+/// let source = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|1|Foo\rOBR|2|Bar";
+/// let m = Message::new(source); // Note that this method can panic
+/// let result = Message::try_from(source); // while try_from() returns a `Result`
+/// assert!(result.is_ok());
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug, PartialEq)]
 pub struct Message<'a> {
-    pub source: &'a str,
+    source: &'a str,
     pub segments: Vec<Segment<'a>>,
     separators: Separators,
 }
 
 impl<'a> Message<'a> {
+    /// Takes the source HL7 string and parses it into a message.  Segments
+    /// and other data are slices (`&str`) into the source HL7 for minimal (preferably 0) copying.  
+    /// ⚠ If an error occurs this method will panic (for back-compat reasons)!  For the preferred non-panicing alternative import the `std::convert::TryFrom` trait and use the `try_from()` function. ⚠
+    /// ## Example:
+    /// ```
+    /// # use rusthl7::Hl7ParseError;
+    /// # use rusthl7::Message;
+    /// # use std::convert::TryFrom;
+    /// # fn main() -> Result<(), Hl7ParseError> {
+    /// let m = Message::try_from("MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4")?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn new(source: &'a str) -> Message<'a> {
-        let separators = str::parse::<Separators>(source).unwrap();
-        let segments: Vec<Segment<'a>> = source
-            .split(separators.segment)
-            .map(|line| Segment::parse(line, &separators).unwrap())
-            .collect();
-
-        Message {
-            source,
-            segments,
-            separators,
-        }
+        Message::try_from(source).unwrap()
     }
 
-    /// Extracts generic elements for external use by matching first field to name
-    pub fn segments_by_name(&self, name: &str) -> Result<Vec<&Segment<'a>>, Hl7ParseError> {
+    /// Queries for segments of the given type (i.e. matches by identifier, or name), returning a set of 0 or more segments.
+    /// ## Example:
+    /// ```
+    /// # use rusthl7::Hl7ParseError;
+    /// # use rusthl7::Message;
+    /// # fn main() -> Result<(), Hl7ParseError> {
+    /// let source = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|1|Foo\rOBR|2|Bar";
+    /// let m = Message::new(source);
+    /// let obr_segments = m.segments_by_identifier("OBR")?;
+    /// assert_eq!(obr_segments.len(), 2);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn segments_by_identifier(&self, name: &str) -> Result<Vec<&Segment<'a>>, Hl7ParseError> {
         let found: Vec<&Segment<'a>> = self
             .segments
             .iter()
-            .filter(|s| s.fields[0].source == name)
+            .filter(|s| s.identifier() == name)
             .collect();
         Ok(found)
     }
 
     /// Present input vectors of &generics to vectors of &str
     pub fn segments_to_str_vecs(
-        segments: Vec<&Segment<'a>>,
+        segments: Vec<&'a Segment<'a>>,
     ) -> Result<Vec<Vec<&'a str>>, Hl7ParseError> {
         let vecs = segments
             .iter()
-            .map(|s| s.fields.iter().map(|f| f.value()).collect())
+            .map(|s| s.fields.iter().map(|f| f.as_str()).collect())
             .collect();
+
         Ok(vecs)
     }
 
@@ -69,7 +98,9 @@ impl<'a> Message<'a> {
         self.source
     }
 
-    /// Gets the delimiter information for this Message
+    /// Gets the delimiter information for this Message.  
+    /// Remember that in HL7 _each individual message_ can have unique characters as separators between fields, repeats, components and sub-components, and so this is a per-message value.
+    /// This method does not allocate
     pub fn get_separators(&self) -> Separators {
         self.separators
     }
@@ -102,7 +133,7 @@ impl<'a> Message<'a> {
     /// Parse query/index string to fill-in missing values.
     /// Required when conumer requests "PID.F3.C1" to pass integers down
     /// to the usize indexers at the appropriate positions
-    pub fn parse_query_string(query: &str) -> Vec<&str> {
+    fn parse_query_string(query: &str) -> Vec<&str> {
         fn query_idx_pos(indices: &[&str], idx: &str) -> Option<usize> {
             indices[1..]
                 .iter()
@@ -160,23 +191,43 @@ impl<'a> Message<'a> {
 impl<'a> TryFrom<&'a str> for Message<'a> {
     type Error = Hl7ParseError;
 
-    /// Takes the source HL7 string and parses it into this message.  Segments
-    /// and other data are slices (`&str`) into the source HL7
+    /// Takes the source HL7 string and parses it into a message.  Segments
+    /// and other data are slices (`&str`) into the source HL7 for minimal (preferably 0) copying.
+    /// ## Example:
+    /// ```
+    /// # use rusthl7::Hl7ParseError;
+    /// # use rusthl7::Message;
+    /// # use std::convert::TryFrom;
+    /// # fn main() -> Result<(), Hl7ParseError> {
+    /// let m = Message::try_from("MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4")?;
+    /// # Ok(())
+    /// # }
+    /// ```
     fn try_from(source: &'a str) -> Result<Self, Self::Error> {
-        let delimiters = str::parse::<Separators>(source)?;
+        let separators = str::parse::<Separators>(source)?;
 
-        let segments: Result<Vec<Segment<'a>>, Hl7ParseError> = source
-            .split(delimiters.segment)
-            .map(|line| Segment::parse(line, &delimiters))
+        let possible: Vec<Result<Segment, Hl7ParseError>> = source
+            .split(separators.segment)
+            .map(|line| Segment::parse(line, &separators))
             .collect();
 
-        let msg = Message {
+        // TODO: This `foreach s { s? }` equivalent seems unrusty.... find a better way
+
+        let mut segments = Vec::<Segment>::new();
+        for s in possible {
+            match s {
+                Ok(s) => segments.push(s),
+                Err(e) => return Err(e),
+            }
+        }
+
+        let m = Message {
             source,
-            segments: segments?,
-            separators: delimiters,
+            segments,
+            separators,
         };
 
-        Ok(msg)
+        Ok(m)
     }
 }
 
@@ -264,11 +315,10 @@ mod tests {
     }
 
     #[test]
-    fn ensure_segments_are_found() -> Result<(), Hl7ParseError> {
+    fn ensure_missing_segments_are_not_found() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
         let msg = Message::try_from(hl7)?;
-
-        assert_eq!(msg.segments_by_name("OBR").unwrap().len(), 1);
+        assert_eq!(msg.segments_by_identifier("EVN").unwrap().len(), 0);
         Ok(())
     }
 
@@ -276,8 +326,8 @@ mod tests {
     fn ensure_segments_convert_to_vectors() -> Result<(), Hl7ParseError> {
         let hl7 = "MSH|^~\\&|GHH LAB|ELAB-3|GHH OE|BLDG4|200202150930||ORU^R01|CNTRL-3456|P|2.4\rOBR|segment";
         let msg = Message::try_from(hl7)?;
-        let segs = msg.segments_by_name("OBR")?;
-        let sval = segs.first().unwrap().fields.first().unwrap().value();
+        let segs = msg.segments_by_identifier("OBR")?;
+        let sval = segs.first().unwrap().fields.first().unwrap().as_str();
         let vecs = Message::segments_to_str_vecs(segs).unwrap();
         let vval = vecs.first().unwrap().first().unwrap();
 

@@ -19,7 +19,7 @@ fn get_segments_by_name(c: &mut Criterion) {
         let m = Message::try_from(get_sample_message()).unwrap();
 
         b.iter(|| {
-            let _segs = m.segments_by_name("OBR").unwrap();
+            let _segs = m.segments_by_identifier("OBR").unwrap();
             //assert!(segs.len() == 1);
         })
     });

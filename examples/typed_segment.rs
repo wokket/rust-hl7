@@ -96,7 +96,7 @@ impl<'a> Clone for MshSegment<'a> {
 
 /// Extracts header element for external use
 pub fn msh<'a>(msg: &Message<'a>) -> Result<MshSegment<'a>, Hl7ParseError> {
-    let seg = msg.segments_by_name("MSH").unwrap()[0];
+    let seg = msg.segments_by_identifier("MSH").unwrap()[0];
     let segment =
         MshSegment::parse(seg.source, &msg.get_separators()).expect("Failed to parse MSH segment");
     Ok(segment)

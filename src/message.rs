@@ -206,20 +206,11 @@ impl<'a> TryFrom<&'a str> for Message<'a> {
     fn try_from(source: &'a str) -> Result<Self, Self::Error> {
         let separators = str::parse::<Separators>(source)?;
 
-        let possible: Vec<Result<Segment, Hl7ParseError>> = source
+        let possible = source
             .split(separators.segment)
-            .map(|line| Segment::parse(line, &separators))
-            .collect();
+            .map(|line| Segment::parse(line, &separators));
 
-        // TODO: This `foreach s { s? }` equivalent seems unrusty.... find a better way
-
-        let mut segments = Vec::<Segment>::new();
-        for s in possible {
-            match s {
-                Ok(s) => segments.push(s),
-                Err(e) => return Err(e),
-            }
-        }
+        let segments: Vec<Segment> = possible.collect::<Result<Vec<Segment>, Self::Error>>()?;
 
         let m = Message {
             source,

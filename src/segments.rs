@@ -84,7 +84,7 @@ impl<'a> Segment<'a> {
             1 => {
                 let stringnum = sections[0]
                     .chars()
-                    .filter(|c| c.is_digit(10))
+                    .filter(|c| c.is_ascii_digit())
                     .collect::<String>();
                 let idx: usize = stringnum.parse().unwrap();
                 self[idx]
@@ -92,7 +92,7 @@ impl<'a> Segment<'a> {
             _ => {
                 let stringnum = sections[0]
                     .chars()
-                    .filter(|c| c.is_digit(10))
+                    .filter(|c| c.is_ascii_digit())
                     .collect::<String>();
                 let idx: usize = stringnum.parse().unwrap();
                 if idx > self.fields.len() - 1 {

@@ -21,9 +21,9 @@ pub struct Separators {
     pub escape_char: char,
 }
 
-impl Separators {
-    /// Create a Separator with the default (most common) HL7 values
-    pub fn default() -> Separators {
+impl Default for Separators {
+	/// Create a Separator with the default (most common) HL7 values
+    fn default() -> Separators {
         Separators {
             segment: '\r',
             field: '|',
@@ -33,6 +33,9 @@ impl Separators {
             escape_char: '\\',
         }
     }
+}
+
+impl Separators {
 
     // Create a Separators with the values provided in the message.
     // This assumes the message starts with `MSH|^~\&|` or equiv for custom Separators

@@ -69,7 +69,7 @@ impl<'a> Field<'a> {
     ) -> Result<Option<Field<'a>>, Hl7ParseError> {
         match input {
             None => Ok(None),
-            Some(x) if x.is_empty() => Ok(None),
+            Some("") => Ok(None),
             Some(x) => Ok(Some(Field::parse(x, delims)?)),
         }
     }
@@ -106,7 +106,7 @@ impl<'a> Field<'a> {
         if parts.len() == 1 {
             let stringnums = parts[0]
                 .chars()
-                .filter(|c| c.is_digit(10))
+                .filter(|c| c.is_ascii_digit())
                 .collect::<String>();
             let idx: usize = stringnums.parse().unwrap();
 
@@ -114,14 +114,14 @@ impl<'a> Field<'a> {
         } else if parts.len() == 2 {
             let stringnums = parts[0]
                 .chars()
-                .filter(|c| c.is_digit(10))
+                .filter(|c| c.is_ascii_digit())
                 .collect::<String>();
 
             let idx0: usize = stringnums.parse().unwrap();
 
             let stringnums = parts[1]
                 .chars()
-                .filter(|c| c.is_digit(10))
+                .filter(|c| c.is_ascii_digit())
                 .collect::<String>();
 
             let idx1: usize = stringnums.parse().unwrap();

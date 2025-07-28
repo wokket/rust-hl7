@@ -18,7 +18,7 @@ This library is trying to provide the _tooling_ you need to build robust HL7 bas
     - [x] Field repeats (via `~`)
 - [x] Initially, avoid any per-segment knowledge, requirement to read the spec too much etc.
     - Implementing all the segments, across all the hl7 versions, version-specific parsing etc is tooooo much while we're getting started.
-- [-] Add support for [HL7 escape sequences](https://www.lyniate.com/knowledge-hub/hl7-escape-sequences/) ([#22](https://github.com/wokket/rust-hl7/issues/22))
+- [ ] Add support for [HL7 escape sequences](https://www.lyniate.com/knowledge-hub/hl7-escape-sequences/) ([#22](https://github.com/wokket/rust-hl7/issues/22))
     - [x] Decoding of the most common escape sequences including `\E\`, `\R\`, `\S\` & `\T\`
     - [x] Correctly passes through `\H\`, `\N\` and custom `\Z..\` sequences unchanged
     - [X] Decodes `\X..\` sequences for hex-encoded chars
